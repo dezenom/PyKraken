@@ -9,12 +9,12 @@ project(
   VERSION ${SKBUILD_PROJECT_VERSION}
   LANGUAGES CXX)
 
+set(CMAKE_CXX_STANDARD 17)
+
 # Find the module development requirements (requires FindPython from 3.17 or
 # scikit-build-core's built-in backport)
 find_package(Python REQUIRED COMPONENTS Interpreter Development.Module)
 find_package(pybind11 CONFIG REQUIRED)
-
-set(CMAKE_PREFIX_PATH "${CMAKE_PREFIX_PATH};C:/libs/SDL3-3.2.12/cmake")
 find_package(SDL3 REQUIRED)
 
 # Add a library using FindPython's tooling (pybind11 also provides a helper like
@@ -23,6 +23,7 @@ python_add_library(_core MODULE
   src/core.cpp
   src/window.cpp
   src/event.cpp
+  src/time.cpp
   WITH_SOABI
 )
 target_link_libraries(_core PRIVATE pybind11::headers SDL3::SDL3)

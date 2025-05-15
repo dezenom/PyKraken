@@ -4,14 +4,12 @@ from pykraken._core import *
 from pykraken._core import (
     window,
     event,
-    init,
-    quit
+    time
 )
 
 __all__ = [
     "__doc__",
     "window",
-    "init",
-    "quit",
     "event",
+    "time",
 ]

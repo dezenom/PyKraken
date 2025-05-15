@@ -1,6 +1,6 @@
-#include "Window.hpp"
 #include "Event.hpp"
-#include <SDL3/SDL.h>
+#include "Time.hpp"
+#include "Window.hpp"
 
 PYBIND11_MODULE(_core, m)
 {
@@ -9,4 +9,5 @@ PYBIND11_MODULE(_core, m)
 
     window::_bind(m);
     event::_bind(m);
+    kn::time::_bind(m);
 }

@@ -9,15 +9,15 @@ void quit();
 
 namespace window
 {
-    void _bind(py::module_ &module);
+void _bind(py::module_& module);
 
-    void create(const std::string &title, int width, int height);
+void create(const std::string& title, int width, int height);
 
-    bool isOpen();
+bool isOpen();
 
-    void close();
+void close();
 
-    void clear();
+void clear();
 
-    void flip();
-}
+void flip();
+} // namespace window
