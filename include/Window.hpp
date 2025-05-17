@@ -11,7 +11,8 @@ namespace window
 {
 void _bind(py::module_& module);
 
-void create(const std::string& title, int width, int height);
+void create(const py::tuple& resolution, const std::string& title = "Kraken Engine",
+            bool scaled = false);
 
 bool isOpen();
 

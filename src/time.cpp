@@ -6,16 +6,18 @@ namespace kn::time
 {
 void _bind(py::module_& module)
 {
-    py::class_<Clock>(module, "Clock")
+    auto subTime = module.def_submodule("time", "Time related functions");
+    
+    subTime.def("get_elapsed_time", &getElapsedTime,
+                "Get the elapsed time since the program started, in seconds");
+    subTime.def("delay", &delay, "Delay the program by a duration in milliseconds");
+
+    py::class_<Clock>(subTime, "Clock")
         .def(py::init<>())
         .def("tick", &Clock::tick, py::arg("frame_rate") = 0,
              "Get the time since the last frame in seconds and optionally cap the framerate")
         .def("get_fps", &Clock::getFPS, "Get the current frames per second of the program");
-
-    auto subTime = module.def_submodule("time", "Time related functions");
-    subTime.def("get_elapsed_time", &getElapsedTime,
-                "Get the elapsed time since the program started, in seconds");
-    subTime.def("delay", &delay, "Delay the program by a duration in milliseconds");
+    module.attr("Clock") = subTime.attr("Clock");
 }
 
 Clock::Clock() : m_lastTick(SDL_GetTicksNS()) {}

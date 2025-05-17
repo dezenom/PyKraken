@@ -1,15 +1,7 @@
 from . import window
 from . import event
 from . import time
-
-class Clock:
-    def tick(frame_rate: int = 0) -> float:
-        """Get the time since the last frame in seconds and optionally cap the framerate"""
-        ...
-        
-    def get_fps() -> int:
-        """Get the current frames per second of the program"""
-        ...
+from . import math
         
 def init() -> None:
     """Initialize Kraken Engine"""

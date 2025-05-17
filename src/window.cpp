@@ -2,6 +2,8 @@
 #include <SDL3/SDL.h>
 #include <stdexcept>
 
+#include <iostream>
+
 static SDL_Window* _window = nullptr;
 static SDL_Renderer* _renderer = nullptr;
 static bool _isOpen = false;
@@ -11,22 +13,56 @@ namespace window
 void _bind(pybind11::module_& module)
 {
     auto subWindow = module.def_submodule("window", "Window related functions");
-    subWindow.def("create", &window::create, "Create a window", py::arg("title"), py::arg("width"),
-                  py::arg("height"));
+    subWindow.def("create", &window::create, py::arg("resolution"),
+                  py::arg("title") = "Kraken Engine", py::arg("scaled") = false,
+                  "Create a window with (width, height), optional title, and auto-scaling mode");
     subWindow.def("is_open", &window::isOpen, "Check if the window is open");
     subWindow.def("close", &window::close, "Close the window");
     subWindow.def("clear", &window::clear, "Clear the screen");
     subWindow.def("flip", &window::flip, "Flip the render buffer");
 }
 
-void create(const std::string& title, int width, int height)
+void create(const py::tuple& resolution, const std::string& title, const bool scaled)
 {
     if (_window || _renderer)
         return;
 
-    SDL_CreateWindowAndRenderer(title.c_str(), width, height, 0, &_window, &_renderer);
+    if (resolution.size() != 2)
+        throw std::invalid_argument("Resolution tuple must be (width, height)");
+
+    int resW = resolution[0].cast<int>();
+    int resH = resolution[1].cast<int>();
+
+    if (resW <= 0 || resH <= 0)
+        throw std::invalid_argument("Resolution values must be greater than 0");
+
+    int winW = resW;
+    int winH = resH;
+
+    if (scaled)
+    {
+        SDL_Rect usableBounds;
+        if (!SDL_GetDisplayUsableBounds(SDL_GetPrimaryDisplay(), &usableBounds))
+            throw std::runtime_error(SDL_GetError());
+
+        int scaleX = usableBounds.w / resW;
+        int scaleY = usableBounds.h / resH;
+        int scale = std::max(1, std::min(scaleX, scaleY));
+
+        winW = resW * scale;
+        winH = resH * scale;
+    }
+
+    SDL_CreateWindowAndRenderer(title.c_str(), winW, winH, 0, &_window, &_renderer);
     if (!_window || !_renderer)
         throw std::runtime_error(SDL_GetError());
+
+    if (scaled)
+    {
+        if (!SDL_SetRenderLogicalPresentation(_renderer, resW, resH,
+                                              SDL_LOGICAL_PRESENTATION_LETTERBOX))
+            throw std::runtime_error(SDL_GetError());
+    }
 
     _isOpen = true;
 }

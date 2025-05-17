@@ -4,7 +4,8 @@ from pykraken._core import *
 from pykraken._core import (
     window,
     event,
-    time
+    time,
+    math
 )
 
 __all__ = [
@@ -12,4 +13,5 @@ __all__ = [
     "window",
     "event",
     "time",
+    "math",
 ]

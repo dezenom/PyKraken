@@ -1,4 +1,4 @@
-def create(title: str, width: int, height: int) -> None:
+def create(resolution: tuple[int, int], title: str, scaled: bool) -> None:
     """Create a window"""
     ...
 
