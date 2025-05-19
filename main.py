@@ -11,8 +11,8 @@ while kn.window.is_open():
         if event.type == kn.KEYDOWN:
             if event.key == kn.K_ESC:
                 kn.window.close()
-    
-    kn.window.clear()
+
+    kn.window.clear((20, 20, 20))
     kn.window.flip()
 
 kn.quit()

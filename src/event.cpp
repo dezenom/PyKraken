@@ -12,11 +12,15 @@ std::vector<knEvent> get()
     std::vector<knEvent> events;
     SDL_Event event;
 
-    // Reset pressed/released maps
+    // Reset keyboard pressed/released maps
     std::fill(std::begin(g_scancodePressed), std::end(g_scancodePressed), false);
     std::fill(std::begin(g_scancodeReleased), std::end(g_scancodeReleased), false);
     g_keycodePressed.clear();
     g_keycodeReleased.clear();
+
+    // Reset mouse pressed/released maps
+    std::fill(std::begin(g_mousePressed), std::end(g_mousePressed), false);
+    std::fill(std::begin(g_mouseReleased), std::end(g_mouseReleased), false);
 
     while (SDL_PollEvent(&event))
     {
@@ -26,9 +30,9 @@ std::vector<knEvent> get()
         case SDL_EVENT_QUIT:
             window::close();
             break;
+
         case SDL_EVENT_KEY_DOWN:
         case SDL_EVENT_KEY_UP:
-            // update pressed/released maps
             if (event.type == SDL_EVENT_KEY_DOWN && !event.key.repeat)
             {
                 g_scancodePressed[event.key.scancode] = true;
@@ -39,10 +43,19 @@ std::vector<knEvent> get()
                 g_scancodeReleased[event.key.scancode] = true;
                 g_keycodeReleased[event.key.key] = true;
             }
-            // attach key & scan to the event
             e.data["key"] = py::cast(static_cast<KnKeycode>(event.key.key));
             e.data["scan"] = py::cast(event.key.scancode);
             break;
+
+        case SDL_EVENT_MOUSE_BUTTON_DOWN:
+        case SDL_EVENT_MOUSE_BUTTON_UP:
+            if (event.type == SDL_EVENT_MOUSE_BUTTON_DOWN)
+                g_mousePressed[event.button.button - 1] = true;
+            else if (event.type == SDL_EVENT_MOUSE_BUTTON_UP)
+                g_mouseReleased[event.button.button - 1] = true;
+            e.data["button"] = py::cast(static_cast<knMouseButton>(event.button.button));
+            break;
+
         default:
             break;
         }

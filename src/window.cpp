@@ -18,9 +18,17 @@ void _bind(pybind11::module_& module)
                   "Create a window with (width, height), optional title, and auto-scaling mode");
     subWindow.def("is_open", &window::isOpen, "Check if the window is open");
     subWindow.def("close", &window::close, "Close the window");
-    subWindow.def("clear", &window::clear, "Clear the screen");
+    subWindow.def("clear", &window::clear, py::arg("color") = py::make_tuple(0, 0, 0),
+                  "Clear the window with the specified color (r, g, b)");
     subWindow.def("flip", &window::flip, "Flip the render buffer");
+    subWindow.def("get_scale", &window::getScale, "Get the current scale of the renderer");
+    subWindow.def("set_fullscreen", &window::setFullscreen, py::arg("fullscreen"),
+                  "Set the fullscreen mode of the window");
+    subWindow.def("is_fullscreen", &window::isFullscreen,
+                  "Check if the window is in fullscreen mode");
 }
+
+SDL_Window* get() { return _window; }
 
 void create(const py::tuple& resolution, const std::string& title, const bool scaled)
 {
@@ -38,7 +46,6 @@ void create(const py::tuple& resolution, const std::string& title, const bool sc
 
     int winW = resW;
     int winH = resH;
-
     if (scaled)
     {
         SDL_Rect usableBounds;
@@ -71,13 +78,55 @@ bool isOpen() { return _isOpen; }
 
 void close() { _isOpen = false; }
 
-void clear()
+void clear(py::tuple color)
 {
-    SDL_SetRenderDrawColor(_renderer, 0, 0, 0, 255);
+    if (!_renderer)
+        throw std::runtime_error("Renderer not initialized");
+
+    if (color.size() != 3)
+        throw std::invalid_argument("Color tuple must be (r, g, b)");
+
+    int r = color[0].cast<int>();
+    int g = color[1].cast<int>();
+    int b = color[2].cast<int>();
+
+    if (r < 0 || r > 255 || g < 0 || g > 255 || b < 0 || b > 255)
+        throw std::invalid_argument("Color values must be between 0 and 255");
+
+    SDL_SetRenderDrawColor(_renderer, r, g, b, 255);
     SDL_RenderClear(_renderer);
 }
 
 void flip() { SDL_RenderPresent(_renderer); }
+
+float getScale()
+{
+    if (!_renderer)
+        throw std::runtime_error("Renderer not initialized");
+
+    int winScale, renScale;
+    SDL_GetWindowSize(_window, &winScale, nullptr);
+    SDL_GetRenderLogicalPresentation(_renderer, &renScale, nullptr, nullptr);
+
+    return static_cast<float>(winScale) / static_cast<float>(renScale);
+}
+
+void setFullscreen(bool fullscreen)
+{
+    if (!_window)
+        throw std::runtime_error("Window not initialized");
+
+    SDL_SetWindowFullscreen(_window, fullscreen);
+}
+
+bool isFullscreen()
+{
+    if (!_window)
+        throw std::runtime_error("Window not initialized");
+
+    return (SDL_GetWindowFlags(_window) & SDL_WINDOW_FULLSCREEN) == SDL_WINDOW_FULLSCREEN;
+}
+
 } // namespace window
 
 void init()
@@ -91,11 +140,13 @@ void init()
 
 void quit()
 {
-    if (_window)
-        SDL_DestroyWindow(_window);
     if (_renderer)
         SDL_DestroyRenderer(_renderer);
-    _window = nullptr;
+    if (_window)
+        SDL_DestroyWindow(_window);
+
     _renderer = nullptr;
+    _window = nullptr;
+
     SDL_Quit();
 }

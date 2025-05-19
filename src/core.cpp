@@ -2,6 +2,7 @@
 #include "Event.hpp"
 #include "Key.hpp"
 #include "Math.hpp"
+#include "Mouse.hpp"
 #include "Time.hpp"
 #include "Window.hpp"
 
@@ -14,6 +15,7 @@ PYBIND11_MODULE(_core, m)
     event::_bind(m);
     key::_bind(m);
     math::_bind(m);
+    mouse::_bind(m);
     kn::time::_bind(m);
     window::_bind(m);
 }

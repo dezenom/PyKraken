@@ -10,7 +10,7 @@ def close() -> None:
     """Close the window"""
     ...
     
-def clear() -> None:
+def clear(color: tuple[int, int, int] = (0, 0, 0)) -> None:
     """Clear the screen"""
     ...
     

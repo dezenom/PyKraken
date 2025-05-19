@@ -20,6 +20,7 @@ python_add_library(_core MODULE
   src/event.cpp
   src/key.cpp
   src/math.cpp
+  src/mouse.cpp
   src/time.cpp
   src/window.cpp
   WITH_SOABI
