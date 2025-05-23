@@ -18,5 +18,5 @@ class knEvent
 
 void _bind(py::module_& module);
 
-std::vector<knEvent> get();
+std::vector<knEvent> poll();
 } // namespace event

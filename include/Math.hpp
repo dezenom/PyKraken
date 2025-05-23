@@ -5,6 +5,9 @@
 
 namespace py = pybind11;
 
+struct SDL_Point;
+struct SDL_FPoint;
+
 namespace math
 {
 struct PolarCoordinate;
@@ -118,6 +121,10 @@ class Vec2
     bool operator<=(const Vec2& other) const;
 
     bool operator>=(const Vec2& other) const;
+
+    operator SDL_Point() const;
+
+    operator SDL_FPoint() const;
 };
 
 template <typename T> Vec2 operator*(const T& lhs, const Vec2& rhs)

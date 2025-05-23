@@ -1,7 +1,5 @@
-cmake_minimum_required(VERSION 3.15...3.27)
+cmake_minimum_required(VERSION 3.15...3.30)
 
-# Scikit-build-core sets these values for you, or you can just hard-code the
-# name and version.
 project(
   ${SKBUILD_PROJECT_NAME}
   VERSION ${SKBUILD_PROJECT_VERSION}
@@ -9,11 +7,11 @@ project(
 
 set(CMAKE_CXX_STANDARD 17)
 
-find_package(Python REQUIRED COMPONENTS Interpreter Development.Module) # Python
+set(PYBIND11_FINDPYTHON ON)
 find_package(pybind11 CONFIG REQUIRED) # PyBind11
 find_package(SDL3 REQUIRED) # SDL3 core
 
-python_add_library(_core MODULE
+pybind11_add_module(_core MODULE
   src/_globals.cpp
   src/constants.cpp
   src/core.cpp
@@ -21,6 +19,7 @@ python_add_library(_core MODULE
   src/key.cpp
   src/math.cpp
   src/mouse.cpp
+  src/rect.cpp
   src/time.cpp
   src/window.cpp
   WITH_SOABI
@@ -32,8 +31,4 @@ target_include_directories(_core PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
-# This is passing in the version as a define just as an example
-target_compile_definitions(_core PRIVATE VERSION_INFO=${PROJECT_VERSION})
-
-# The install directory is the output (wheel) directory
-install(TARGETS _core DESTINATION pykraken)
+install(TARGETS _core DESTINATION ${SKBUILD_PROJECT_NAME})

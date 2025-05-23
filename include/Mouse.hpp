@@ -14,9 +14,9 @@ namespace mouse
 {
 void _bind(py::module_& module);
 
-math::Vec2 getPos();
+py::tuple getPos();
 
-math::Vec2 getRel();
+py::tuple getRel();
 
 bool isPressed(knMouseButton button);
 

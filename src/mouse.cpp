@@ -26,20 +26,20 @@ void _bind(pybind11::module_& module)
     subMouse.def("is_hidden", &mouse::isHidden, "Check if the mouse cursor is hidden");
 }
 
-math::Vec2 getPos()
+py::tuple getPos()
 {
     float x, y;
     SDL_GetMouseState(&x, &y);
-    const math::Vec2 pos = {x, y};
-    return pos / window::getScale();
+    const auto s = window::getScale();
+    return py::make_tuple(x / s, y / s);
 }
 
-math::Vec2 getRel()
+py::tuple getRel()
 {
     float dx, dy;
     SDL_GetRelativeMouseState(&dx, &dy);
-    const math::Vec2 rel = {dx, dy};
-    return rel / window::getScale();
+    const auto s = window::getScale();
+    return py::make_tuple(dx / s, dy / s);
 }
 
 bool isPressed(knMouseButton button)

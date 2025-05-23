@@ -1,5 +1,6 @@
 #include "Math.hpp"
 
+#include <SDL3/SDL.h>
 #include <algorithm>
 #include <cmath>
 
@@ -24,39 +25,66 @@ void _bind(py::module_& module)
         .def(py::init<double, double>(), py::arg("x"), py::arg("y"),
              "Create a Vec2 with given x and y values")
         .def(py::init(
-                 [](py::tuple t)
+                 [](py::sequence s)
                  {
-                     if (t.size() != 2)
-                         throw std::runtime_error("Vec2 constructor requires a tuple of size 2");
-                     return Vec2(py::float_(t[0]), py::float_(t[1]));
+                     if (s.size() != 2)
+                         throw std::runtime_error("Vec2 requires a 2-element sequence");
+                     return Vec2(s[0].cast<double>(), s[1].cast<double>());
                  }),
-             py::arg("tuple"), "Construct from a 2-tuple")
+             "Create a Vec2 from a sequence of two elements")
 
         // Fields
         .def_readwrite("x", &Vec2::x)
         .def_readwrite("y", &Vec2::y)
 
-        // String and repr
+        // Magic methods
         .def("__str__", [](const Vec2& v)
-             { return "(" + std::to_string(v.x) + ", " + std::to_string(v.y) + ")"; })
+             { return "<" + std::to_string(v.x) + ", " + std::to_string(v.y) + ">"; })
         .def("__repr__", [](const Vec2& v)
              { return "Vec2(" + std::to_string(v.x) + ", " + std::to_string(v.y) + ")"; })
+        .def(
+            "__iter__", [](const Vec2& v) { return py::make_iterator(&v.x, &v.x + 2); },
+            py::keep_alive<0, 1>())
+        .def("__getitem__",
+             [](const Vec2& v, const size_t i)
+             {
+                 if (i == 0)
+                     return v.x;
+                 else if (i == 1)
+                     return v.y;
+                 else
+                     throw py::index_error("Index out of range");
+             })
+        .def("__setitem__",
+             [](Vec2& v, const size_t i, const double value)
+             {
+                 if (i == 0)
+                     v.x = value;
+                 else if (i == 1)
+                     v.y = value;
+                 else
+                     throw py::index_error("Index out of range");
+             })
+        .def("__len__", [](const Vec2&) { return 2; })
 
         // Arithmetic operators
         .def("__add__", &Vec2::operator+)
         .def("__sub__", [](const Vec2& a, const Vec2& b) { return a - b; })
         .def("__neg__", [](const Vec2& v) { return -v; })
+        .def(
+            "__bool__", [](const Vec2& v) { return !v.isZero(); },
+            "Check if the vector is not zero")
 
         .def("__iadd__", &Vec2::operator+=)
         .def("__isub__", &Vec2::operator-=)
 
-        .def("__truediv__", [](const Vec2& v, double scalar) { return v / scalar; })
-        .def("__itruediv__", [](Vec2& v, double scalar) -> Vec2& { return v /= scalar; })
+        .def("__truediv__", [](const Vec2& v, const double scalar) { return v / scalar; })
+        .def("__itruediv__", [](Vec2& v, const double scalar) -> Vec2& { return v /= scalar; })
 
-        .def("__mul__", [](const Vec2& v, double scalar) { return v * scalar; })
-        .def("__rmul__",
-             [](double scalar, const Vec2& v) { return scalar * v; }) // Uses your global overload
-        .def("__imul__", [](Vec2& v, double scalar) -> Vec2& { return v *= scalar; })
+        .def("__mul__", [](const Vec2& v, const double scalar) { return v * scalar; })
+        .def("__rmul__", [](const double scalar, const Vec2& v)
+             { return scalar * v; }) // Uses your global overload
+        .def("__imul__", [](Vec2& v, const double scalar) -> Vec2& { return v *= scalar; })
 
         .def("__hash__",
              [](const Vec2& v)
@@ -166,11 +194,11 @@ double cross(const Vec2& a, const Vec2& b) { return a.x * b.y - a.y * b.x; }
 
 double angleBetween(const Vec2& a, const Vec2& b)
 {
-    double dotProduct = dot(a, b);
     double lengths = a.getLength() * b.getLength();
     if (lengths == 0.0)
         return 0.0;
 
+    double dotProduct = dot(a, b);
     double cosTheta = dotProduct / lengths;
     return std::acos(std::clamp(cosTheta, -1.0, 1.0));
 }
@@ -266,4 +294,7 @@ bool Vec2::operator<(const Vec2& other) const { return (x < other.x && y < other
 bool Vec2::operator>(const Vec2& other) const { return (x > other.x && y > other.y); }
 bool Vec2::operator<=(const Vec2& other) const { return !(*this > other); }
 bool Vec2::operator>=(const Vec2& other) const { return !(*this < other); }
+
+Vec2::operator SDL_Point() const { return {static_cast<int>(x), static_cast<int>(y)}; }
+Vec2::operator SDL_FPoint() const { return {static_cast<float>(x), static_cast<float>(y)}; }
 } // namespace math

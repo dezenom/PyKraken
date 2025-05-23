@@ -7,7 +7,19 @@
 
 namespace event
 {
-std::vector<knEvent> get()
+
+void _bind(py::module_& module)
+{
+    auto subEvent = module.def_submodule("event", "Event related functions");
+    subEvent.def("poll", &poll, "Get user input events");
+
+    py::class_<knEvent>(subEvent, "Event")
+        .def_readonly("type", &knEvent::type)
+        .def("__getattr__", &knEvent::getAttr);
+    module.attr("Event") = subEvent.attr("Event");
+}
+
+std::vector<knEvent> poll()
 {
     std::vector<knEvent> events;
     SDL_Event event;
@@ -59,6 +71,7 @@ std::vector<knEvent> get()
         default:
             break;
         }
+
         events.push_back(std::move(e));
     }
 
@@ -72,17 +85,5 @@ py::object knEvent::getAttr(const std::string& name) const
     if (data.contains(name))
         return data[name.c_str()];
     throw py::attribute_error("Attribute '" + name + "' not found");
-}
-
-void _bind(py::module_& module)
-{
-    auto subEvent = module.def_submodule("event", "Event related functions");
-
-    subEvent.def("get", &get, "Get all window user events");
-
-    py::class_<knEvent>(subEvent, "Event")
-        .def_readonly("type", &knEvent::type)
-        .def("__getattr__", &knEvent::getAttr);
-    module.attr("Event") = subEvent.attr("Event");
 }
 } // namespace event

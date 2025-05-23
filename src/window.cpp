@@ -1,8 +1,8 @@
 #include "Window.hpp"
-#include <SDL3/SDL.h>
-#include <stdexcept>
 
+#include <SDL3/SDL.h>
 #include <iostream>
+#include <stdexcept>
 
 static SDL_Window* _window = nullptr;
 static SDL_Renderer* _renderer = nullptr;
@@ -38,8 +38,8 @@ void create(const py::tuple& resolution, const std::string& title, const bool sc
     if (resolution.size() != 2)
         throw std::invalid_argument("Resolution tuple must be (width, height)");
 
-    int resW = resolution[0].cast<int>();
-    int resH = resolution[1].cast<int>();
+    const auto resW = resolution[0].cast<int>();
+    const auto resH = resolution[1].cast<int>();
 
     if (resW <= 0 || resH <= 0)
         throw std::invalid_argument("Resolution values must be greater than 0");
@@ -52,9 +52,9 @@ void create(const py::tuple& resolution, const std::string& title, const bool sc
         if (!SDL_GetDisplayUsableBounds(SDL_GetPrimaryDisplay(), &usableBounds))
             throw std::runtime_error(SDL_GetError());
 
-        int scaleX = usableBounds.w / resW;
-        int scaleY = usableBounds.h / resH;
-        int scale = std::max(1, std::min(scaleX, scaleY));
+        const int scaleX = usableBounds.w / resW;
+        const int scaleY = usableBounds.h / resH;
+        const int scale = std::max(1, std::min(scaleX, scaleY));
 
         winW = resW * scale;
         winH = resH * scale;
