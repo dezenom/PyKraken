@@ -1,4 +1,4 @@
-name: Build Wheels
+name: Build Wheels (Windows Only)
 
 on:
   push:
@@ -7,10 +7,7 @@ on:
 
 jobs:
   build:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: windows-latest
 
     steps:
       - uses: actions/checkout@v4
@@ -23,34 +20,20 @@ jobs:
 
       - name: Download SDL3 binary
         run: |
-          SDL_VERSION=3.2.14
+          $SDL_VERSION = "3.2.14"
+          Invoke-WebRequest -Uri "https://github.com/libsdl-org/SDL/releases/download/release-$SDL_VERSION/SDL3-$SDL_VERSION-win32-x64.zip" -OutFile "sdl3.zip"
+          Expand-Archive -Path "sdl3.zip" -DestinationPath "sdl3"
+          Copy-Item -Path "sdl3/SDL3.dll" -Destination "src/pykraken/"
+        shell: powershell
 
-          if [[ "$RUNNER_OS" == "Windows" ]]; then
-            curl -L -o sdl3.zip https://github.com/libsdl-org/SDL/releases/download/release-${SDL_VERSION}/SDL3-${SDL_VERSION}-win32-x64.zip
-            unzip sdl3.zip -d sdl3
-            cp sdl3/SDL3.dll src/pykraken/
-
-          elif [[ "$RUNNER_OS" == "macOS" ]]; then
-            curl -LO https://github.com/libsdl-org/SDL/releases/download/release-${SDL_VERSION}/SDL3-${SDL_VERSION}.zip
-            unzip SDL3-${SDL_VERSION}.zip -d sdl3
-            cp sdl3/libSDL3.dylib src/pykraken/
-
-          elif [[ "$RUNNER_OS" == "Linux" ]]; then
-            curl -L -o sdl3.tar.gz https://github.com/libsdl-org/SDL/releases/download/release-${SDL_VERSION}/SDL3-${SDL_VERSION}.tar.gz
-            tar -xzf sdl3.tar.gz
-            cd SDL3-${SDL_VERSION}
-            ./configure && make -j$(nproc)
-            cp build/.libs/libSDL3.so ../src/pykraken/
-          fi
-        shell: bash
-
-      - uses: pypa/cibuildwheel@v2.23.3
+      - name: Build wheels with cibuildwheel
+        uses: pypa/cibuildwheel@v2.23.3
         env:
           CIBW_SKIP: "pp* cp36* cp37*"
-          CIBW_BUILD: "cp310-* cp311-* cp312-*"
+          CIBW_BUILD: "cp310-* cp311-* cp312-* cp313-*"
 
       - name: Confirm wheel build output
-        run: ls -lh wheelhouse
+        run: dir wheelhouse
 
       - uses: actions/upload-artifact@v4
         with:
