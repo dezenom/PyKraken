@@ -4,6 +4,11 @@
 namespace py = pybind11;
 
 struct SDL_Window;
+struct Color;
+namespace math
+{
+class Vec2;
+}
 
 void init();
 
@@ -15,13 +20,13 @@ void _bind(py::module_& module);
 
 SDL_Window* get();
 
-void create(const py::tuple& resolution, const std::string& title, bool scaled);
+void create(const math::Vec2& resolution, const std::string& title, bool scaled);
 
 bool isOpen();
 
 void close();
 
-void clear(py::tuple color);
+void clear(const Color& color);
 
 void flip();
 

@@ -1,4 +1,6 @@
-def create(resolution: tuple[int, int], title: str, scaled: bool) -> None:
+from typing import Sequence
+
+def create(resolution: Sequence[int, int], title: str, scaled: bool) -> None:
     """Create a window"""
     ...
 
@@ -10,7 +12,7 @@ def close() -> None:
     """Close the window"""
     ...
     
-def clear(color: tuple[int, int, int] = (0, 0, 0)) -> None:
+def clear(color: Sequence[int, int, int] = (0, 0, 0)) -> None:
     """Clear the screen"""
     ...
     

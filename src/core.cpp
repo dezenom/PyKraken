@@ -1,3 +1,4 @@
+#include "Color.hpp"
 #include "Constants.hpp"
 #include "Event.hpp"
 #include "Key.hpp"
@@ -12,6 +13,7 @@ PYBIND11_MODULE(_core, m)
     m.def("init", &init, "Initialize Kraken Engine");
     m.def("quit", &quit, "Quit Kraken Engine");
 
+    color::_bind(m);
     constants::_bind(m);
     event::_bind(m);
     key::_bind(m);

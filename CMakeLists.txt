@@ -13,6 +13,7 @@ find_package(SDL3 REQUIRED) # SDL3 core
 
 pybind11_add_module(_core MODULE
   src/_globals.cpp
+  src/color.cpp
   src/constants.cpp
   src/core.cpp
   src/event.cpp

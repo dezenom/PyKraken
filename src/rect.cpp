@@ -1,42 +1,114 @@
 #include "Rect.hpp"
+#include "Math.hpp"
+
+#define VEC2_PROPERTY(name, getter, setter)                                                        \
+    .def_property(                                                                                 \
+        name,                                                                                      \
+        [](const Rect& r)                                                                          \
+        {                                                                                          \
+            const math::Vec2 pos = r.getter();                                                     \
+            return py::make_tuple(pos.x, pos.y);                                                   \
+        },                                                                                         \
+        [](Rect& r, py::sequence s)                                                                \
+        {                                                                                          \
+            if (s.size() != 2)                                                                     \
+                throw std::runtime_error(std::string(name) + " must be a 2-element sequence");     \
+            r.setter(math::Vec2(s[0].cast<double>(), s[1].cast<double>()));                        \
+        })
 
 namespace rect
 {
 void _bind(py::module_& module)
 {
-    auto subRect = module.def_submodule("rect", "Rectangle related functions");
-
-    py::class_<Rect>(subRect, "Rect")
-        .def(py::init<>())
-        .def(py::init<const py::sequence&, const py::sequence&>())
+    py::class_<Rect>(module, "Rect")
+        .def(py::init())
         .def(py::init<double, double, double, double>())
-        .def(py::init<const py::sequence&, double, double>())
-        .def(py::init<double, double, const py::sequence&>())
+        .def(py::init(
+            [](const py::sequence& s) -> Rect
+            {
+                if (s.size() != 4)
+                    throw std::runtime_error("Rect((x, y, w, h)) expects a 4-element sequence");
+                return {s[0].cast<double>(), s[1].cast<double>(), s[2].cast<double>(),
+                        s[3].cast<double>()};
+            }))
+        .def(py::init(
+            [](const py::sequence& pos, const py::sequence& size) -> Rect
+            {
+                if (pos.size() != 2)
+                    throw std::runtime_error("Position must be a 2-element sequence");
+                if (size.size() != 2)
+                    throw std::runtime_error("Size must be a 2-element sequence");
+
+                return {{pos[0].cast<double>(), pos[1].cast<double>()},
+                        {size[0].cast<double>(), size[1].cast<double>()}};
+            }))
+        .def(py::init(
+            [](const py::sequence& pos, const py::float_& w, const py::float_& h) -> Rect
+            {
+                if (pos.size() != 2)
+                    throw std::runtime_error("Position must be a 2-element sequence");
+                return {{pos[0].cast<double>(), pos[1].cast<double>()}, w, h};
+            }))
+        .def(py::init(
+            [](const py::float_& x, const py::float_& y, const py::sequence& size) -> Rect
+            {
+                if (size.size() != 2)
+                    throw std::runtime_error("Size must be a 2-element sequence");
+                return {x, y, {size[0].cast<double>(), size[1].cast<double>()}};
+            }))
+
         .def_readwrite("x", &Rect::x)
         .def_readwrite("y", &Rect::y)
         .def_readwrite("w", &Rect::w)
         .def_readwrite("h", &Rect::h)
-        .def_property("size", &Rect::getSize, &Rect::setSize)
+
         .def_property("left", &Rect::getLeft, &Rect::setLeft)
         .def_property("right", &Rect::getRight, &Rect::setRight)
         .def_property("top", &Rect::getTop, &Rect::setTop)
         .def_property("bottom", &Rect::getBottom, &Rect::setBottom)
-        .def_property("top_left", &Rect::getTopLeft, &Rect::setTopLeft)
-        .def_property("top_mid", &Rect::getTopMid, &Rect::setTopMid)
-        .def_property("top_right", &Rect::getTopRight, &Rect::setTopRight)
-        .def_property("mid_left", &Rect::getMidLeft, &Rect::setMidLeft)
-        .def_property("center", &Rect::getCenter, &Rect::setCenter)
-        .def_property("mid_right", &Rect::getMidRight, &Rect::setMidRight)
-        .def_property("bottom_left", &Rect::getBottomLeft, &Rect::setBottomLeft)
-        .def_property("bottom_mid", &Rect::getBottomMid, &Rect::setBottomMid)
-        .def_property("bottom_right", &Rect::getBottomRight, &Rect::setBottomRight)
+        // clang-format off
+        VEC2_PROPERTY("size", getSize, setSize)
+        VEC2_PROPERTY("top_left", getTopLeft, setTopLeft)
+        VEC2_PROPERTY("top_mid", getTopMid, setTopMid)
+        VEC2_PROPERTY("top_right", getTopRight, setTopRight)
+        VEC2_PROPERTY("mid_left", getMidLeft, setMidLeft)
+        VEC2_PROPERTY("center", getCenter, setCenter)
+        VEC2_PROPERTY("mid_right", getMidRight, setMidRight)
+        VEC2_PROPERTY("bottom_left", getBottomLeft, setBottomLeft)
+        VEC2_PROPERTY("bottom_mid", getBottomMid, setBottomMid)
+        VEC2_PROPERTY("bottom_right", getBottomRight, setBottomRight)
+        // clang-format on
+
+        .def("copy", &Rect::copy)
+        .def("move", &Rect::move)
+        .def("inflate", &Rect::inflate)
+        .def("fit", &Rect::fit)
+        .def("contains", &Rect::contains)
         .def("collide_point", &Rect::collidePoint)
         .def("collide_rect", &Rect::collideRect)
-        .def("clamp", py::overload_cast<const py::sequence&, const py::sequence&>(&Rect::clamp))
         .def("clamp", py::overload_cast<const Rect&>(&Rect::clamp))
+        .def("clamp",
+             [](Rect& self, const py::sequence& min, const py::sequence& max)
+             {
+                 if (min.size() != 2)
+                     throw std::runtime_error("'min' must be a 2-element sequence");
+                 if (max.size() != 2)
+                     throw std::runtime_error("'max' must be a 2-element sequence");
+
+                 self.clamp({min[0].cast<double>(), min[1].cast<double>()},
+                            {max[0].cast<double>(), max[1].cast<double>()});
+             })
         .def("scale_by", py::overload_cast<double>(&Rect::scaleBy))
-        .def("scale_by", py::overload_cast<const py::sequence&>(&Rect::scaleBy))
+        .def("scale_by",
+             [](Rect& self, const py::sequence& factor)
+             {
+                 if (factor.size() != 2)
+                     throw std::runtime_error("'factor' must be a 2-element sequence");
+
+                 self.scaleBy({factor[0].cast<double>(), factor[1].cast<double>()});
+             })
         .def("scale_to", &Rect::scaleTo)
+
         .def("__eq__", &Rect::operator==)
         .def("__ne__", &Rect::operator!=)
         .def("__bool__", [](const Rect& rect) { return rect.w > 0 && rect.h > 0; })
@@ -73,17 +145,35 @@ void _bind(py::module_& module)
                      throw py::index_error("Index out of range");
                  }
              });
-    module.attr("Rect") = subRect.attr("Rect");
 
-    subRect.def("clamp", py::overload_cast<const Rect&, const py::sequence&, const py::sequence&>(
-                             &rect::clamp));
+    auto subRect = module.def_submodule("rect", "Rectangle related functions");
+
+    subRect.def("clamp",
+                [](const Rect& rect, const py::sequence& min, const py::sequence& max) -> Rect
+                {
+                    if (min.size() != 2)
+                        throw std::runtime_error("'min' must be a 2-element sequence");
+                    if (max.size() != 2)
+                        throw std::runtime_error("'max' must be a 2-element sequence");
+
+                    return clamp(rect, {min[0].cast<double>(), min[1].cast<double>()},
+                                 {max[0].cast<double>(), max[1].cast<double>()});
+                });
     subRect.def("clamp", py::overload_cast<const Rect&, const Rect&>(&rect::clamp));
     subRect.def("scale_by", py::overload_cast<const Rect&, double>(&rect::scaleBy));
-    subRect.def("scale_by", py::overload_cast<const Rect&, const py::sequence&>(&rect::scaleBy));
+    subRect.def("scale_by",
+                [](const Rect& rect, const py::sequence& factor)
+                {
+                    if (factor.size() != 2)
+                        throw std::runtime_error("'scale' must be a 2-element sequence");
+
+                    return scaleBy(rect, {factor[0].cast<double>(), factor[1].cast<double>()});
+                });
+    subRect.def("scale_by", py::overload_cast<const Rect&, const math::Vec2&>(&rect::scaleBy));
     subRect.def("scale_to", &rect::scaleTo);
 }
 
-Rect clamp(const Rect& rect, const py::sequence& min, const py::sequence& max)
+Rect clamp(const Rect& rect, const math::Vec2& min, const math::Vec2& max)
 {
     Rect result = rect;
     result.clamp(min, max);
@@ -97,21 +187,21 @@ Rect clamp(const Rect& rect, const Rect& other)
     return result;
 }
 
-Rect scaleBy(const Rect& rect, const double scale)
+Rect scaleBy(const Rect& rect, const double factor)
 {
     Rect result = rect;
-    result.scaleBy(scale);
+    result.scaleBy(factor);
     return result;
 }
 
-Rect scaleBy(const Rect& rect, const py::sequence& scale)
+Rect scaleBy(const Rect& rect, const math::Vec2& factor)
 {
     Rect result = rect;
-    result.scaleBy(scale);
+    result.scaleBy(factor);
     return result;
 }
 
-Rect scaleTo(const Rect& rect, const py::sequence& size)
+Rect scaleTo(const Rect& rect, const math::Vec2& size)
 {
     Rect result = rect;
     result.scaleTo(size);
@@ -119,28 +209,65 @@ Rect scaleTo(const Rect& rect, const py::sequence& size)
 }
 } // namespace rect
 
-Rect::Rect() : x(0), y(0), w(0), h(0) {}
-
-Rect::Rect(const py::sequence& pos, const py::sequence& size)
+Rect::Rect(const math::Vec2& pos, const math::Vec2& size) : x(pos.x), y(pos.y), w(size.x), h(size.y)
 {
-    if (pos.size() != 2)
-        throw std::invalid_argument("Position must be a sequence of length 2");
-    if (size.size() != 2)
-        throw std::invalid_argument("Size must be a sequence of length 2");
-
-    x = pos[0].cast<double>();
-    y = pos[1].cast<double>();
-    w = size[0].cast<double>();
-    h = size[1].cast<double>();
 }
 
-bool Rect::collidePoint(const py::sequence& point) const
+Rect::Rect(const double x, const double y, const double w, const double h) : x(x), y(y), w(w), h(h)
 {
-    if (point.size() != 2)
-        throw std::invalid_argument("Point must be a sequence of length 2");
+}
 
-    const auto px = point[0].cast<double>();
-    const auto py = point[1].cast<double>();
+Rect::Rect(const math::Vec2& pos, const double w, const double h) : x(pos.x), y(pos.y), w(w), h(h)
+{
+}
+
+Rect::Rect(const double x, const double y, const math::Vec2& size)
+    : x(x), y(y), w(size.x), h(size.y)
+{
+}
+
+Rect Rect::copy() const { return {x, y, w, h}; }
+
+void Rect::move(const math::Vec2& offset)
+{
+    x += offset.x;
+    y += offset.y;
+}
+
+void Rect::inflate(const math::Vec2& offset)
+{
+    x -= offset.x / 2.0;
+    y -= offset.y / 2.0;
+    w += offset.x;
+    h += offset.x;
+}
+
+void Rect::fit(const Rect& other)
+{
+    if (other.w <= 0 || other.h <= 0)
+    {
+        throw std::invalid_argument("Other rect must have positive width and height");
+        return;
+    }
+
+    const double scaleX = other.w / w;
+    const double scaleY = other.h / h;
+    const double scale = std::min(scaleX, scaleY);
+    w *= scale;
+    h *= scale;
+    x = other.x + (other.w - w) / 2.0;
+    y = other.y + (other.h - h) / 2.0;
+}
+
+bool Rect::contains(const Rect& other) const
+{
+    return x <= other.x && y <= other.y && x + w >= other.x + other.w && y + h >= other.y + other.h;
+}
+
+bool Rect::collidePoint(const math::Vec2& point) const
+{
+    const auto px = point.x;
+    const auto py = point.y;
 
     return px >= x && px <= x + w && py >= y && py <= y + h;
 }
@@ -150,17 +277,12 @@ bool Rect::collideRect(const Rect& other) const
     return x < other.x + other.w && x + w > other.x && y < other.y + other.h && y + h > other.y;
 }
 
-void Rect::clamp(const py::sequence& min, const py::sequence& max)
+void Rect::clamp(const math::Vec2& min, const math::Vec2& max)
 {
-    if (min.size() != 2)
-        throw std::invalid_argument("Min must be a sequence of length 2");
-    if (max.size() != 2)
-        throw std::invalid_argument("Max must be a sequence of length 2");
-
-    const auto minX = min[0].cast<double>();
-    const auto minY = min[1].cast<double>();
-    const auto maxX = max[0].cast<double>();
-    const auto maxY = max[1].cast<double>();
+    const auto minX = min.x;
+    const auto minY = min.y;
+    const auto maxX = max.x;
+    const auto maxY = max.y;
 
     if (minX > maxX || minY > maxY)
         throw std::invalid_argument("Invalid min/max values: min must be less than max");
@@ -176,37 +298,31 @@ void Rect::clamp(const py::sequence& min, const py::sequence& max)
 
 void Rect::clamp(const Rect& other) { clamp(other.getTopLeft(), other.getBottomRight()); }
 
-void Rect::scaleBy(const double scale)
+void Rect::scaleBy(const double factor)
 {
-    if (scale <= 0)
-        throw std::invalid_argument("Scale must be greater than 0");
+    if (factor <= 0)
+        throw std::invalid_argument("Factor must be greater than 0");
 
-    w *= scale;
-    h *= scale;
+    w *= factor;
+    h *= factor;
 }
 
-void Rect::scaleBy(const py::sequence& scale)
+void Rect::scaleBy(const math::Vec2& factor)
 {
-    if (scale.size() != 2)
-        throw std::invalid_argument("Scale must be a sequence of length 2");
-
-    const auto scaleX = scale[0].cast<double>();
-    const auto scaleY = scale[1].cast<double>();
+    const auto scaleX = factor.x;
+    const auto scaleY = factor.y;
 
     if (scaleX <= 0 || scaleY <= 0)
-        throw std::invalid_argument("Scale must be greater than 0");
+        throw std::invalid_argument("Factor must be greater than 0");
 
     w *= scaleX;
     h *= scaleY;
 }
 
-void Rect::scaleTo(const py::sequence& size)
+void Rect::scaleTo(const math::Vec2& size)
 {
-    if (size.size() != 2)
-        throw std::invalid_argument("Size must be a sequence of length 2");
-
-    const auto width = size[0].cast<double>();
-    const auto height = size[1].cast<double>();
+    const auto width = size.x;
+    const auto height = size.y;
 
     if (width <= 0.0)
         throw std::invalid_argument("Width must be greater than 0");
@@ -235,102 +351,72 @@ Rect::operator SDL_FRect() const
             static_cast<float>(h)};
 }
 
-void Rect::setSize(const py::sequence& size)
+void Rect::setSize(const math::Vec2& size)
 {
-    if (size.size() != 2)
-        throw std::invalid_argument("Size must be a sequence of length 2");
-
-    w = size[0].cast<double>();
-    h = size[1].cast<double>();
+    w = size.x;
+    h = size.y;
 }
 void Rect::setLeft(const double x) { this->x = x; }
 void Rect::setRight(const double x) { this->x = x - w; }
 void Rect::setTop(const double y) { this->y = y; }
 void Rect::setBottom(const double y) { this->y = y - h; }
-void Rect::setTopLeft(const py::sequence& pos)
+void Rect::setTopLeft(const math::Vec2& pos)
 {
-    if (pos.size() != 2)
-        throw std::invalid_argument("Position must be a sequence of length 2");
-
-    x = pos[0].cast<double>();
-    y = pos[1].cast<double>();
+    x = pos.x;
+    y = pos.x;
 }
-void Rect::setTopMid(const py::sequence& pos)
+void Rect::setTopMid(const math::Vec2& pos)
 {
-    if (pos.size() != 2)
-        throw std::invalid_argument("Position must be a sequence of length 2");
-
-    x = pos[0].cast<double>() - w / 2.0;
-    y = pos[1].cast<double>();
+    x = pos.x - w / 2.0;
+    y = pos.y;
 }
-void Rect::setTopRight(const py::sequence& pos)
+void Rect::setTopRight(const math::Vec2& pos)
 {
-    if (pos.size() != 2)
-        throw std::invalid_argument("Position must be a sequence of length 2");
-
-    x = pos[0].cast<double>() - w;
-    y = pos[1].cast<double>();
+    x = pos.x - w;
+    y = pos.y;
 }
-void Rect::setMidLeft(const py::sequence& pos)
+void Rect::setMidLeft(const math::Vec2& pos)
 {
-    if (pos.size() != 2)
-        throw std::invalid_argument("Position must be a sequence of length 2");
-
-    x = pos[0].cast<double>();
-    y = pos[1].cast<double>() - h / 2.0;
+    x = pos.x;
+    y = pos.y - h / 2.0;
 }
-void Rect::setCenter(const py::sequence& pos)
+void Rect::setCenter(const math::Vec2& pos)
 {
-    if (pos.size() != 2)
-        throw std::invalid_argument("Position must be a sequence of length 2");
-
-    x = pos[0].cast<double>() - w / 2.0;
-    y = pos[1].cast<double>() - h / 2.0;
+    x = pos.x - w / 2.0;
+    y = pos.y - h / 2.0;
 }
-void Rect::setMidRight(const py::sequence& pos)
+void Rect::setMidRight(const math::Vec2& pos)
 {
-    if (pos.size() != 2)
-        throw std::invalid_argument("Position must be a sequence of length 2");
-
-    x = pos[0].cast<double>() - w;
-    y = pos[1].cast<double>() - h / 2.0;
+    x = pos.x - w;
+    y = pos.y - h / 2.0;
 }
-void Rect::setBottomLeft(const py::sequence& pos)
+void Rect::setBottomLeft(const math::Vec2& pos)
 {
-    if (pos.size() != 2)
-        throw std::invalid_argument("Position must be a sequence of length 2");
-
-    x = pos[0].cast<double>();
-    y = pos[1].cast<double>() - h;
+    x = pos.x;
+    y = pos.y - h;
 }
-void Rect::setBottomMid(const py::sequence& pos)
+void Rect::setBottomMid(const math::Vec2& pos)
 {
-    if (pos.size() != 2)
-        throw std::invalid_argument("Position must be a sequence of length 2");
-
-    x = pos[0].cast<double>() - w / 2.0;
-    y = pos[1].cast<double>() - h;
+    x = pos.x - w / 2.0;
+    y = pos.y - h;
 }
-void Rect::setBottomRight(const py::sequence& pos)
+void Rect::setBottomRight(const math::Vec2& pos)
 {
-    if (pos.size() != 2)
-        throw std::invalid_argument("Position must be a sequence of length 2");
-
-    x = pos[0].cast<double>() - w;
-    y = pos[1].cast<double>() - h;
+    x = pos.x - w;
+    y = pos.y - h;
 }
 
-py::tuple Rect::getSize() const { return py::make_tuple(w, h); }
+math::Vec2 Rect::getSize() const { return {w, h}; }
 double Rect::getLeft() const { return x; }
 double Rect::getRight() const { return x + w; }
 double Rect::getTop() const { return y; }
 double Rect::getBottom() const { return y + h; }
-py::tuple Rect::getTopLeft() const { return py::make_tuple(x, y); }
-py::tuple Rect::getTopMid() const { return py::make_tuple(x + w / 2.0, y); }
-py::tuple Rect::getTopRight() const { return py::make_tuple(x + w, y); }
-py::tuple Rect::getMidLeft() const { return py::make_tuple(x, y + h / 2.0); }
-py::tuple Rect::getCenter() const { return py::make_tuple(x + w / 2.0, y + h / 2.0); }
-py::tuple Rect::getMidRight() const { return py::make_tuple(x + w, y + h / 2.0); }
-py::tuple Rect::getBottomLeft() const { return py::make_tuple(x, y + h); }
-py::tuple Rect::getBottomMid() const { return py::make_tuple(x + w / 2.0, y + h); }
-py::tuple Rect::getBottomRight() const { return py::make_tuple(x + w, y + h); }
+math::Vec2 Rect::getTopLeft() const { return {x, y}; }
+math::Vec2 Rect::getTopMid() const { return {x + w / 2.0, y}; }
+math::Vec2 Rect::getTopRight() const { return {x + w, y}; }
+math::Vec2 Rect::getMidLeft() const { return {x, y + h / 2.0}; }
+math::Vec2 Rect::getCenter() const { return {x + w / 2.0, y + h / 2.0}; }
+math::Vec2 Rect::getMidRight() const { return {x + w, y + h / 2.0}; }
+math::Vec2 Rect::getBottomLeft() const { return {x, y + h}; }
+math::Vec2 Rect::getBottomMid() const { return {x + w / 2.0, y + h}; }
+math::Vec2 Rect::getBottomRight() const { return {x + w, y + h}; }

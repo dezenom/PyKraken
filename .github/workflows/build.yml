@@ -1,0 +1,53 @@
+name: Build Wheels
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Install dependencies
+      run: python -m pip install --upgrade pip setuptools wheel scikit-build-core cibuildwheel
+
+    - name: Download SDL3 binary
+      run: |
+        SDL_VERSION=3.2.14
+
+        if [[ "$RUNNER_OS" == "Windows" ]]; then
+          curl -L -o sdl3.zip https://github.com/libsdl-org/SDL/releases/download/release-${SDL_VERSION}/SDL3-${SDL_VERSION}-win32-x64.zip
+          unzip sdl3.zip -d sdl3
+          cp sdl3/SDL3.dll src/pykraken/
+
+        elif [[ "$RUNNER_OS" == "macOS" ]]; then
+          curl -L -o sdl3.dmg https://github.com/libsdl-org/SDL/releases/download/release-${SDL_VERSION}/SDL3-${SDL_VERSION}.dmg
+          7z x sdl3.dmg -osdl3_mount
+          cp -R sdl3_mount/SDL3.framework/Versions/A/SDL3 src/pykraken/libSDL3.dylib
+
+        elif [[ "$RUNNER_OS" == "Linux" ]]; then
+          curl -L -o sdl3.tar.gz https://github.com/libsdl-org/SDL/releases/download/release-${SDL_VERSION}/SDL3-${SDL_VERSION}.tar.gz
+          tar -xzf sdl3.tar.gz
+          cd SDL3-${SDL_VERSION}
+          ./configure && make -j$(nproc)
+          cp build/.libs/libSDL3.so ../src/pykraken/
+        fi
+      shell: bash
+
+    - uses: pypa/cibuildwheel@v2.16.2
+      env:
+        CIBW_SKIP: "pp* cp36* cp37*"
+        CIBW_BUILD: "cp310-* cp311-* cp312-*"
+
+    - uses: actions/upload-artifact@v3
+      with:
+        name: wheels
+        path: ./wheelhouse/*.whl
+        retention-days: 5

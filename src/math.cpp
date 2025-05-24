@@ -16,8 +16,75 @@ void _bind(py::module_& module)
 
     py::class_<PolarCoordinate>(subMath, "PolarCoordinate")
         .def(py::init<>())
+        .def(py::init(
+                 [](py::sequence s)
+                 {
+                     if (s.size() != 2)
+                         throw std::runtime_error("PolarCoordinate expects a 2-element sequence");
+                     return PolarCoordinate(s[0].cast<double>(), s[1].cast<double>());
+                 }),
+             "Construct from sequence (angle, radius)")
+
+        .def(py::init<double, double>(), py::arg("angle"), py::arg("radius"),
+             "Construct from angle and radius")
+
+        .def("to_cartesian", &PolarCoordinate::toCartesian,
+             "Convert to Cartesian coordinates (Vec2)")
+
+        .def_static(
+            "from_vec2",
+            [](const Vec2& v)
+            {
+                double angle = std::atan2(v.y, v.x);
+                double radius = std::sqrt(v.x * v.x + v.y * v.y);
+                return PolarCoordinate(angle, radius);
+            },
+            "Create a PolarCoordinate from a Vec2")
+
+        .def("__eq__", &PolarCoordinate::operator==)
+        .def("__ne__", &PolarCoordinate::operator!=)
+
         .def_readwrite("angle", &PolarCoordinate::angle)
-        .def_readwrite("radius", &PolarCoordinate::radius);
+        .def_readwrite("radius", &PolarCoordinate::radius)
+        .def("__str__", [](const PolarCoordinate& p)
+             { return "(" + std::to_string(p.angle) + ", " + std::to_string(p.radius) + ")"; })
+        .def("__repr__",
+             [](const PolarCoordinate& p)
+             {
+                 return "PolarCoordinate(" + std::to_string(p.angle) + ", " +
+                        std::to_string(p.radius) + ")";
+             })
+        .def(
+            "__iter__", [](const PolarCoordinate& p)
+            { return py::make_iterator(&p.angle, &p.angle + 2); }, py::keep_alive<0, 1>())
+        .def("__getitem__",
+             [](const PolarCoordinate& p, const size_t i)
+             {
+                 if (i == 0)
+                     return p.angle;
+                 else if (i == 1)
+                     return p.radius;
+                 else
+                     throw py::index_error("Index out of range");
+             })
+        .def("__setitem__",
+             [](PolarCoordinate& p, const size_t i, const double value)
+             {
+                 if (i == 0)
+                     p.angle = value;
+                 else if (i == 1)
+                     p.radius = value;
+                 else
+                     throw py::index_error("Index out of range");
+             })
+        .def("__len__", [](const PolarCoordinate&) { return 2; })
+        .def("__hash__",
+             [](const PolarCoordinate& p)
+             {
+                 std::size_t ha = std::hash<double>{}(p.angle);
+                 std::size_t hr = std::hash<double>{}(p.radius);
+                 return ha ^ (hr << 1);
+             });
     module.attr("PolarCoordinate") = subMath.attr("PolarCoordinate");
 
     py::class_<Vec2>(subMath, "Vec2")
@@ -68,22 +135,102 @@ void _bind(py::module_& module)
         .def("__len__", [](const Vec2&) { return 2; })
 
         // Arithmetic operators
-        .def("__add__", &Vec2::operator+)
-        .def("__sub__", [](const Vec2& a, const Vec2& b) { return a - b; })
+        .def("__add__",
+             [](const Vec2& a, const py::object& b)
+             {
+                 if (py::isinstance<Vec2>(b))
+                     return a + b.cast<Vec2>();
+                 if (py::isinstance<py::sequence>(b))
+                 {
+                     py::sequence seq = b.cast<py::sequence>();
+                     if (seq.size() == 2)
+                         return a + Vec2(seq[0].cast<double>(), seq[1].cast<double>());
+                 }
+                 throw py::type_error(
+                     "Vec2 can only be added to another Vec2 or a sequence of 2 numbers");
+             })
+        .def("__radd__",
+             [](const Vec2& b, const py::object& a)
+             {
+                 if (py::isinstance<Vec2>(a))
+                     return a.cast<Vec2>() + b;
+                 if (py::isinstance<py::sequence>(a))
+                 {
+                     py::sequence seq = a.cast<py::sequence>();
+                     if (seq.size() == 2)
+                         return Vec2(seq[0].cast<double>(), seq[1].cast<double>()) + b;
+                 }
+                 throw py::type_error(
+                     "Vec2 can only be added to another Vec2 or a sequence of 2 numbers");
+             })
+        .def("__iadd__",
+             [](Vec2& a, const py::object& b) -> Vec2&
+             {
+                 if (py::isinstance<Vec2>(b))
+                     return a += b.cast<Vec2>();
+                 if (py::isinstance<py::sequence>(b))
+                 {
+                     py::sequence seq = b.cast<py::sequence>();
+                     if (seq.size() == 2)
+                         return a += Vec2(seq[0].cast<double>(), seq[1].cast<double>());
+                 }
+                 throw py::type_error(
+                     "Vec2 can only be added to another Vec2 or a sequence of 2 numbers");
+             })
+
+        .def("__sub__",
+             [](const Vec2& a, const py::object& b)
+             {
+                 if (py::isinstance<Vec2>(b))
+                     return a - b.cast<Vec2>();
+                 if (py::isinstance<py::sequence>(b))
+                 {
+                     py::sequence seq = b.cast<py::sequence>();
+                     if (seq.size() == 2)
+                         return a - Vec2(seq[0].cast<double>(), seq[1].cast<double>());
+                 }
+                 throw py::type_error(
+                     "Vec2 can only be subtracted by another Vec2 or a sequence of 2 numbers");
+             })
+        .def("__rsub__",
+             [](const Vec2& b, const py::object& a)
+             {
+                 if (py::isinstance<Vec2>(a))
+                     return a.cast<Vec2>() - b;
+                 if (py::isinstance<py::sequence>(a))
+                 {
+                     py::sequence seq = a.cast<py::sequence>();
+                     if (seq.size() == 2)
+                         return Vec2(seq[0].cast<double>(), seq[1].cast<double>()) - b;
+                 }
+                 throw py::type_error(
+                     "Vec2 can only be subtracted by another Vec2 or a sequence of 2 numbers");
+             })
+        .def("__isub__",
+             [](Vec2& a, const py::object& b) -> Vec2&
+             {
+                 if (py::isinstance<Vec2>(b))
+                     return a -= b.cast<Vec2>();
+                 if (py::isinstance<py::sequence>(b))
+                 {
+                     py::sequence seq = b.cast<py::sequence>();
+                     if (seq.size() == 2)
+                         return a -= Vec2(seq[0].cast<double>(), seq[1].cast<double>());
+                 }
+                 throw py::type_error(
+                     "Vec2 can only be subtracted by another Vec2 or a sequence of 2 numbers");
+             })
+
         .def("__neg__", [](const Vec2& v) { return -v; })
         .def(
             "__bool__", [](const Vec2& v) { return !v.isZero(); },
             "Check if the vector is not zero")
 
-        .def("__iadd__", &Vec2::operator+=)
-        .def("__isub__", &Vec2::operator-=)
-
         .def("__truediv__", [](const Vec2& v, const double scalar) { return v / scalar; })
         .def("__itruediv__", [](Vec2& v, const double scalar) -> Vec2& { return v /= scalar; })
 
         .def("__mul__", [](const Vec2& v, const double scalar) { return v * scalar; })
-        .def("__rmul__", [](const double scalar, const Vec2& v)
-             { return scalar * v; }) // Uses your global overload
+        .def("__rmul__", [](const double scalar, const Vec2& v) { return scalar * v; })
         .def("__imul__", [](Vec2& v, const double scalar) -> Vec2& { return v *= scalar; })
 
         .def("__hash__",
@@ -109,7 +256,7 @@ void _bind(py::module_& module)
         .def("normalize", &Vec2::normalize)
         .def("scale_to_length", &Vec2::scaleToLength, py::arg("length"))
         .def("distance_to", &Vec2::distanceTo, py::arg("other"))
-        .def("as_polar", &Vec2::asPolar, "Return a polar coordinate pair (angle, length)");
+        .def("to_polar", &Vec2::toPolar, "Return a polar coordinate pair (angle, length)");
     module.attr("Vec2") = subMath.attr("Vec2");
 
     subMath.def("scale_to_length", &scaleToLength, "Scale a vector to a given length");
@@ -203,6 +350,26 @@ double angleBetween(const Vec2& a, const Vec2& b)
     return std::acos(std::clamp(cosTheta, -1.0, 1.0));
 }
 
+PolarCoordinate::PolarCoordinate(double angle, double radius) : angle(angle), radius(radius) {}
+
+Vec2 PolarCoordinate::toCartesian() const
+{
+    return {radius * std::cos(angle), radius * std::sin(angle)};
+}
+
+bool PolarCoordinate::operator==(const PolarCoordinate& other) const
+{
+    return angle == other.angle && radius == other.radius;
+}
+
+bool PolarCoordinate::operator!=(const PolarCoordinate& other) const { return !(*this == other); }
+
+Vec2::Vec2(py::float_ x, py::float_ y) : x(x.cast<double>()), y(y.cast<double>()) {}
+
+Vec2::Vec2(py::float_ value) : x(value.cast<double>()), y(value.cast<double>()) {}
+
+Vec2 Vec2::copy() const { return {x, y}; }
+
 bool Vec2::isZero(double tolerance) const
 {
     return std::abs(x) < tolerance && std::abs(y) < tolerance;
@@ -225,15 +392,15 @@ void Vec2::rotate(const double rad)
     y = newY;
 }
 
-PolarCoordinate Vec2::asPolar() const { return {getAngle(), getLength()}; }
+PolarCoordinate Vec2::toPolar() const { return {getAngle(), getLength()}; }
 
 void Vec2::scaleToLength(const double scalar)
 {
-    double length = getLength();
+    const double length = getLength();
     if (length == 0.0)
         return;
 
-    double scale = scalar / length;
+    const double scale = scalar / length;
     x *= scale;
     y *= scale;
 }
@@ -254,13 +421,13 @@ Vec2 Vec2::reject(const Vec2& other) const
 
 Vec2 Vec2::reflect(const Vec2& other) const
 {
-    Vec2 projection = project(other) * 2;
+    Vec2 projection = project(other) * 2.0;
     return *this - projection;
 }
 
 void Vec2::normalize()
 {
-    double length = getLength();
+    const double length = getLength();
     if (length == 0.0)
         return;
 
@@ -270,9 +437,19 @@ void Vec2::normalize()
 
 double Vec2::distanceTo(const Vec2& other) const { return (other - *this).getLength(); }
 
-Vec2 Vec2::operator+(const Vec2& other) const { return Vec2(x + other.x, y + other.y); }
-Vec2 Vec2::operator-(const Vec2& other) const { return Vec2(x - other.x, y - other.y); }
-Vec2 Vec2::operator-() const { return Vec2(-x, -y); }
+Vec2 Vec2::operator-() const { return {-x, -y}; }
+
+Vec2 Vec2::operator+(const Vec2& other) const { return {x + other.x, y + other.y}; }
+Vec2 Vec2::operator-(const Vec2& other) const { return {x - other.x, y - other.y}; }
+Vec2 Vec2::operator*(py::float_ scalar) const
+{
+    return {x * scalar.cast<double>(), y * scalar.cast<double>()};
+}
+Vec2 Vec2::operator/(py::float_ scalar) const
+{
+    return {x / scalar.cast<double>(), y / scalar.cast<double>()};
+}
+
 Vec2& Vec2::operator+=(const Vec2& other)
 {
     x += other.x;
@@ -285,10 +462,22 @@ Vec2& Vec2::operator-=(const Vec2& other)
     y -= other.y;
     return *this;
 }
-bool Vec2::operator==(const Vec2& other) const
+Vec2& Vec2::operator*=(py::float_ scalar)
 {
-    return std::abs(x - other.x) < 1e-8 && std::abs(y - other.y) < 1e-8;
+    x *= scalar.cast<double>();
+    y *= scalar.cast<double>();
+    return *this;
 }
+Vec2& Vec2::operator/=(py::float_ scalar)
+{
+    x /= scalar.cast<double>();
+    y /= scalar.cast<double>();
+    return *this;
+}
+
+Vec2 operator*(py::float_ lhs, const Vec2& rhs) { return rhs * lhs; }
+
+bool Vec2::operator==(const Vec2& other) const { return (*this - other).isZero(); }
 bool Vec2::operator!=(const Vec2& other) const { return !(*this == other); }
 bool Vec2::operator<(const Vec2& other) const { return (x < other.x && y < other.y); }
 bool Vec2::operator>(const Vec2& other) const { return (x > other.x && y > other.y); }

@@ -10,7 +10,7 @@ struct SDL_FPoint;
 
 namespace math
 {
-struct PolarCoordinate;
+class PolarCoordinate;
 class Vec2;
 
 void _bind(py::module_& module);
@@ -43,8 +43,17 @@ double angleBetween(const Vec2& a, const Vec2& b);
 
 struct PolarCoordinate
 {
-    double angle = 0;
-    double radius = 0;
+    double angle = 0.0;
+    double radius = 0.0;
+
+    PolarCoordinate() = default;
+    PolarCoordinate(double angle, double radius);
+
+    Vec2 toCartesian() const;
+
+    bool operator==(const PolarCoordinate& other) const;
+
+    bool operator!=(const PolarCoordinate& other) const;
 };
 
 class Vec2
@@ -55,10 +64,11 @@ class Vec2
 
     Vec2() = default;
 
-    template <typename _first, typename _second>
-    Vec2(_first x, _second y) : x(static_cast<double>(x)), y(static_cast<double>(y))
-    {
-    }
+    Vec2(py::float_ value);
+
+    Vec2(py::float_ x, py::float_ y);
+
+    Vec2 copy() const;
 
     bool isZero(double tolerance = 1e-8) const;
 
@@ -68,7 +78,7 @@ class Vec2
 
     void rotate(double rad);
 
-    PolarCoordinate asPolar() const;
+    PolarCoordinate toPolar() const;
 
     void scaleToLength(double scalar);
 
@@ -79,61 +89,31 @@ class Vec2
     Vec2 reflect(const Vec2& other) const;
 
     void normalize();
-
     double distanceTo(const Vec2& other) const;
 
-    template <typename T> Vec2 operator/(T scalar) const { return {x / scalar, y / scalar}; }
-
-    template <typename T> Vec2& operator/=(T scalar)
-    {
-        x /= scalar;
-        y /= scalar;
-
-        return *this;
-    }
-
-    template <typename T> Vec2& operator*=(T scalar)
-    {
-        x *= scalar;
-        y *= scalar;
-
-        return *this;
-    }
+    Vec2 operator-() const; // Unary negation
 
     Vec2 operator+(const Vec2& other) const;
-
     Vec2 operator-(const Vec2& other) const;
-
-    Vec2 operator-() const;
+    Vec2 operator*(py::float_ scalar) const;
+    Vec2 operator/(py::float_ scalar) const;
 
     Vec2& operator+=(const Vec2& other);
-
     Vec2& operator-=(const Vec2& other);
+    Vec2& operator*=(py::float_ scalar);
+    Vec2& operator/=(py::float_ scalar);
 
     bool operator==(const Vec2& other) const;
-
     bool operator!=(const Vec2& other) const;
-
     bool operator<(const Vec2& other) const;
-
     bool operator>(const Vec2& other) const;
-
     bool operator<=(const Vec2& other) const;
-
     bool operator>=(const Vec2& other) const;
 
     operator SDL_Point() const;
-
     operator SDL_FPoint() const;
 };
 
-template <typename T> Vec2 operator*(const T& lhs, const Vec2& rhs)
-{
-    const double x = lhs * rhs.x;
-    const double y = lhs * rhs.y;
+Vec2 operator*(py::float_ lhs, const Vec2& rhs);
 
-    return {x, y};
-}
-
-template <typename T> Vec2 operator*(const Vec2& lhs, const T& rhs) { return rhs * lhs; }
 } // namespace math

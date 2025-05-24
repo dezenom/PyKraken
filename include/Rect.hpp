@@ -1,6 +1,5 @@
 #pragma once
 
-#include "Math.hpp"
 #include <SDL3/SDL.h>
 #include <pybind11/pybind11.h>
 
@@ -8,66 +7,59 @@ namespace py = pybind11;
 
 class Rect;
 
+namespace math
+{
+class Vec2;
+}
+
 namespace rect
 {
 void _bind(py::module_& module);
 
-Rect clamp(const Rect& rect, const py::sequence& min, const py::sequence& max);
+Rect clamp(const Rect& rect, const math::Vec2& min, const math::Vec2& max);
 Rect clamp(const Rect& rect, const Rect& other);
-Rect scaleBy(const Rect& rect, double scale);
-Rect scaleBy(const Rect& rect, const py::sequence& scale);
-Rect scaleTo(const Rect& rect, const py::sequence& size);
+Rect scaleBy(const Rect& rect, double factor);
+Rect scaleBy(const Rect& rect, const math::Vec2& factor);
+Rect scaleTo(const Rect& rect, const math::Vec2& size);
 } // namespace rect
 
 class Rect
 {
   public:
-    double x, y, w, h;
+    double x = 0;
+    double y = 0;
+    double w = 0;
+    double h = 0;
 
-    Rect();
+    Rect() = default;
+    Rect(const math::Vec2& pos, const math::Vec2& size);
+    Rect(double x, double y, double w, double h);
+    Rect(const math::Vec2& pos, double w, double h);
+    Rect(double x, double y, const math::Vec2& size);
 
-    Rect(const py::sequence& pos, const py::sequence& size);
+    Rect copy() const;
 
-    template <typename T>
-    Rect(T x, T y, T w, T h)
-        : x(static_cast<double>(x)), y(static_cast<double>(y)), w(static_cast<double>(w)),
-          h(static_cast<double>(h))
-    {
-    }
+    void move(const math::Vec2& offset);
 
-    template <typename T>
-    Rect(const py::sequence& pos, T w, T h) : w(static_cast<double>(w)), h(static_cast<double>(h))
-    {
-        if (pos.size() != 2)
-            throw std::invalid_argument("Position must be a sequence of length 2");
+    void inflate(const math::Vec2& offset);
 
-        x = pos[0].cast<double>();
-        y = pos[1].cast<double>();
-    }
+    void fit(const Rect& other);
 
-    template <typename T>
-    Rect(T x, T y, const py::sequence& size) : x(static_cast<double>(x)), y(static_cast<double>(y))
-    {
-        if (size.size() != 2)
-            throw std::invalid_argument("Size must be a sequence of length 2");
+    bool contains(const Rect& other) const;
 
-        w = size[0].cast<double>();
-        h = size[1].cast<double>();
-    }
-
-    bool collidePoint(const py::sequence& point) const;
+    bool collidePoint(const math::Vec2& point) const;
 
     bool collideRect(const Rect& other) const;
 
-    void clamp(const py::sequence& min, const py::sequence& max);
+    void clamp(const math::Vec2& min, const math::Vec2& max);
 
     void clamp(const Rect& other);
 
-    void scaleBy(double scale);
+    void scaleBy(double factor);
 
-    void scaleBy(const py::sequence& scale);
+    void scaleBy(const math::Vec2& factor);
 
-    void scaleTo(const py::sequence& size);
+    void scaleTo(const math::Vec2& size);
 
     bool operator==(const Rect& other) const;
     bool operator!=(const Rect& other) const;
@@ -75,33 +67,33 @@ class Rect
     operator SDL_Rect() const;
     operator SDL_FRect() const;
 
-    void setSize(const py::sequence& size);
+    void setSize(const math::Vec2& size);
     void setLeft(double left);
     void setRight(double right);
     void setTop(double top);
     void setBottom(double bottom);
-    void setTopLeft(const py::sequence& topLeft);
-    void setTopMid(const py::sequence& topMid);
-    void setTopRight(const py::sequence& topRight);
-    void setMidLeft(const py::sequence& midLeft);
-    void setCenter(const py::sequence& mid);
-    void setMidRight(const py::sequence& midRight);
-    void setBottomLeft(const py::sequence& bottomLeft);
-    void setBottomMid(const py::sequence& bottomMid);
-    void setBottomRight(const py::sequence& bottomRight);
+    void setTopLeft(const math::Vec2& topLeft);
+    void setTopMid(const math::Vec2& topMid);
+    void setTopRight(const math::Vec2& topRight);
+    void setMidLeft(const math::Vec2& midLeft);
+    void setCenter(const math::Vec2& mid);
+    void setMidRight(const math::Vec2& midRight);
+    void setBottomLeft(const math::Vec2& bottomLeft);
+    void setBottomMid(const math::Vec2& bottomMid);
+    void setBottomRight(const math::Vec2& bottomRight);
 
-    py::tuple getSize() const;
+    math::Vec2 getSize() const;
     double getLeft() const;
     double getRight() const;
     double getTop() const;
     double getBottom() const;
-    py::tuple getTopLeft() const;
-    py::tuple getTopMid() const;
-    py::tuple getTopRight() const;
-    py::tuple getMidLeft() const;
-    py::tuple getCenter() const;
-    py::tuple getMidRight() const;
-    py::tuple getBottomLeft() const;
-    py::tuple getBottomMid() const;
-    py::tuple getBottomRight() const;
+    math::Vec2 getTopLeft() const;
+    math::Vec2 getTopMid() const;
+    math::Vec2 getTopRight() const;
+    math::Vec2 getMidLeft() const;
+    math::Vec2 getCenter() const;
+    math::Vec2 getMidRight() const;
+    math::Vec2 getBottomLeft() const;
+    math::Vec2 getBottomMid() const;
+    math::Vec2 getBottomRight() const;
 };

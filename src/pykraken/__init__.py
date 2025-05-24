@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from pykraken._core import *
 from pykraken._core import (
+    color,
     event,
     key,
     math,
@@ -13,6 +14,7 @@ from pykraken._core import (
 
 __all__ = [
     "__doc__",
+    "color",
     "event",
     "key",
     "math",
