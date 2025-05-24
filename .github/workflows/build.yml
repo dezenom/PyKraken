@@ -23,7 +23,7 @@ jobs:
           $SDL_VERSION = "3.2.14"
           Invoke-WebRequest -Uri "https://github.com/libsdl-org/SDL/releases/download/release-$SDL_VERSION/SDL3-devel-$SDL_VERSION-VC.zip" -OutFile "sdl3.zip"
           Expand-Archive -Path "sdl3.zip" -DestinationPath "sdl3"
-          Copy-Item "sdl3/SDL3-$SDL_VERSION/SDL3.dll" -Destination "src/pykraken/"
+          Copy-Item "sdl3/SDL3-$SDL_VERSION/lib/x64/SDL3.dll" -Destination "src/pykraken/"
           echo "SDL3_CMAKE_PATH=${PWD}/sdl3/SDL3-$SDL_VERSION/cmake" | Out-File -FilePath $env:GITHUB_ENV -Append
         shell: powershell
 
