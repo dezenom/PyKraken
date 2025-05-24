@@ -18,6 +18,10 @@ jobs:
     - name: Install dependencies
       run: python -m pip install --upgrade pip setuptools wheel scikit-build-core cibuildwheel
 
+    - name: Install 7z on macOS
+      if: runner.os == 'macOS'
+      run: brew install p7zip
+
     - name: Download SDL3 binary
       run: |
         SDL_VERSION=3.2.14
