@@ -18,17 +18,20 @@ jobs:
           pip install scikit-build-core==0.11.2 cibuildwheel==2.23.3
         timeout-minutes: 5
 
-      - name: Download SDL3 binary
+      - name: Download SDL3 devel (Windows)
         run: |
           $SDL_VERSION = "3.2.14"
-          Invoke-WebRequest -Uri "https://github.com/libsdl-org/SDL/releases/download/release-$SDL_VERSION/SDL3-$SDL_VERSION-win32-x64.zip" -OutFile "sdl3.zip"
+          Invoke-WebRequest -Uri "https://github.com/libsdl-org/SDL/releases/download/release-$SDL_VERSION/SDL3-devel-$SDL_VERSION-VC.zip" -OutFile "sdl3.zip"
           Expand-Archive -Path "sdl3.zip" -DestinationPath "sdl3"
-          Copy-Item -Path "sdl3/SDL3.dll" -Destination "src/pykraken/"
+          Copy-Item "sdl3/SDL3-$SDL_VERSION/SDL3.dll" -Destination "src/pykraken/"
+          echo "SDL3_CMAKE_PATH=${PWD}/sdl3/SDL3-$SDL_VERSION/cmake" | Out-File -FilePath $env:GITHUB_ENV -Append
         shell: powershell
 
       - name: Build wheels with cibuildwheel
         uses: pypa/cibuildwheel@v2.23.3
         env:
+          CIBW_ENVIRONMENT_WINDOWS: >
+            SDL3_DIR="${SDL3_CMAKE_PATH}"
           CIBW_SKIP: "pp* cp36* cp37*"
           CIBW_BUILD: "cp310-* cp311-* cp312-* cp313-*"
 
