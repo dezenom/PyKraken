@@ -47,12 +47,15 @@ struct PolarCoordinate
     double radius = 0.0;
 
     PolarCoordinate() = default;
-    PolarCoordinate(double angle, double radius);
+    template <typename T>
+    PolarCoordinate(T angle, T radius)
+        : angle(static_cast<double>(angle)), radius(static_cast<double>(radius))
+    {
+    }
 
     Vec2 toCartesian() const;
 
     bool operator==(const PolarCoordinate& other) const;
-
     bool operator!=(const PolarCoordinate& other) const;
 };
 
@@ -64,9 +67,12 @@ class Vec2
 
     Vec2() = default;
 
-    Vec2(py::float_ value);
+    template <typename T>
+    Vec2(T value) : x(static_cast<double>(value)), y(static_cast<double>(value))
+    {
+    }
 
-    Vec2(py::float_ x, py::float_ y);
+    template <typename T> Vec2(T x, T y) : x(static_cast<double>(x)), y(static_cast<double>(y)) {}
 
     Vec2 copy() const;
 
@@ -89,6 +95,7 @@ class Vec2
     Vec2 reflect(const Vec2& other) const;
 
     void normalize();
+
     double distanceTo(const Vec2& other) const;
 
     Vec2 operator-() const; // Unary negation

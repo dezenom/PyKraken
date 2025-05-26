@@ -60,9 +60,12 @@ void _bind(pybind11::module_& module)
                   "Set the fullscreen mode of the window");
     subWindow.def("is_fullscreen", &window::isFullscreen,
                   "Check if the window is in fullscreen mode");
+    subWindow.def("get_size", &window::getSize, "Get the current size of the window");
 }
 
-SDL_Window* get() { return _window; }
+SDL_Window* getWindow() { return _window; }
+
+SDL_Renderer* getRenderer() { return _renderer; }
 
 void create(const math::Vec2& resolution, const std::string& title, const bool scaled)
 {
@@ -123,6 +126,19 @@ void clear(const Color& color)
 }
 
 void flip() { SDL_RenderPresent(_renderer); }
+
+py::tuple getSize()
+{
+    if (!_window)
+        throw std::runtime_error("Window not initialized");
+
+    int w, h;
+    SDL_GetRenderLogicalPresentation(_renderer, &w, &h, nullptr);
+    if (!w || !h)
+        SDL_GetWindowSize(_window, &w, &h);
+
+    return py::make_tuple(w, h);
+}
 
 float getScale()
 {

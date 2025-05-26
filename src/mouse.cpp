@@ -54,11 +54,11 @@ bool isJustReleased(knMouseButton button)
     return g_mouseReleased[static_cast<size_t>(button) - 1];
 }
 
-void lock() { SDL_SetWindowRelativeMouseMode(window::get(), true); }
+void lock() { SDL_SetWindowRelativeMouseMode(window::getWindow(), true); }
 
-void unlock() { SDL_SetWindowRelativeMouseMode(window::get(), false); }
+void unlock() { SDL_SetWindowRelativeMouseMode(window::getWindow(), false); }
 
-bool isLocked() { return SDL_GetWindowRelativeMouseMode(window::get()); }
+bool isLocked() { return SDL_GetWindowRelativeMouseMode(window::getWindow()); }
 
 void hide() { SDL_HideCursor(); }
 

@@ -5,7 +5,7 @@
 #include <cmath>
 
 #ifndef M_PI
-#define M_PI 3.14159265358979323846
+#define M_PI 3.1415926535897932384626433832795
 #endif
 
 namespace math
@@ -15,7 +15,7 @@ void _bind(py::module_& module)
     auto subMath = module.def_submodule("math", "Math related functions");
 
     py::class_<PolarCoordinate>(subMath, "PolarCoordinate")
-        .def(py::init<>())
+        .def(py::init())
         .def(py::init(
                  [](py::sequence s)
                  {
@@ -24,22 +24,11 @@ void _bind(py::module_& module)
                      return PolarCoordinate(s[0].cast<double>(), s[1].cast<double>());
                  }),
              "Construct from sequence (angle, radius)")
-
         .def(py::init<double, double>(), py::arg("angle"), py::arg("radius"),
              "Construct from angle and radius")
 
         .def("to_cartesian", &PolarCoordinate::toCartesian,
              "Convert to Cartesian coordinates (Vec2)")
-
-        .def_static(
-            "from_vec2",
-            [](const Vec2& v)
-            {
-                double angle = std::atan2(v.y, v.x);
-                double radius = std::sqrt(v.x * v.x + v.y * v.y);
-                return PolarCoordinate(angle, radius);
-            },
-            "Create a PolarCoordinate from a Vec2")
 
         .def("__eq__", &PolarCoordinate::operator==)
         .def("__ne__", &PolarCoordinate::operator!=)
@@ -88,7 +77,9 @@ void _bind(py::module_& module)
     module.attr("PolarCoordinate") = subMath.attr("PolarCoordinate");
 
     py::class_<Vec2>(subMath, "Vec2")
-        .def(py::init<>(), "Create a zero vector")
+        .def(py::init(), "Create a zero vector")
+        .def(py::init<double>(), py::arg("value"),
+             "Create a Vec2 with both x and y set to the same value")
         .def(py::init<double, double>(), py::arg("x"), py::arg("y"),
              "Create a Vec2 with given x and y values")
         .def(py::init(
@@ -350,8 +341,6 @@ double angleBetween(const Vec2& a, const Vec2& b)
     return std::acos(std::clamp(cosTheta, -1.0, 1.0));
 }
 
-PolarCoordinate::PolarCoordinate(double angle, double radius) : angle(angle), radius(radius) {}
-
 Vec2 PolarCoordinate::toCartesian() const
 {
     return {radius * std::cos(angle), radius * std::sin(angle)};
@@ -363,10 +352,6 @@ bool PolarCoordinate::operator==(const PolarCoordinate& other) const
 }
 
 bool PolarCoordinate::operator!=(const PolarCoordinate& other) const { return !(*this == other); }
-
-Vec2::Vec2(py::float_ x, py::float_ y) : x(x.cast<double>()), y(y.cast<double>()) {}
-
-Vec2::Vec2(py::float_ value) : x(value.cast<double>()), y(value.cast<double>()) {}
 
 Vec2 Vec2::copy() const { return {x, y}; }
 

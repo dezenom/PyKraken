@@ -4,6 +4,7 @@
 namespace py = pybind11;
 
 struct SDL_Window;
+struct SDL_Renderer;
 struct Color;
 namespace math
 {
@@ -18,7 +19,9 @@ namespace window
 {
 void _bind(py::module_& module);
 
-SDL_Window* get();
+SDL_Window* getWindow();
+
+SDL_Renderer* getRenderer();
 
 void create(const math::Vec2& resolution, const std::string& title, bool scaled);
 
@@ -29,6 +32,8 @@ void close();
 void clear(const Color& color);
 
 void flip();
+
+py::tuple getSize();
 
 float getScale();
 

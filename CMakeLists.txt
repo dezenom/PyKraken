@@ -12,10 +12,13 @@ find_package(pybind11 CONFIG REQUIRED) # PyBind11
 find_package(SDL3 REQUIRED) # SDL3 core
 
 pybind11_add_module(_core MODULE
+  src/gfx/SDL3_gfxPrimitives.cpp
+  src/gfx/SDL3_rotozoom.cpp
   src/_globals.cpp
   src/color.cpp
   src/constants.cpp
   src/core.cpp
+  src/draw.cpp
   src/event.cpp
   src/key.cpp
   src/math.cpp

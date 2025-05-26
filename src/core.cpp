@@ -1,5 +1,6 @@
 #include "Color.hpp"
 #include "Constants.hpp"
+#include "Draw.hpp"
 #include "Event.hpp"
 #include "Key.hpp"
 #include "Math.hpp"
@@ -15,6 +16,7 @@ PYBIND11_MODULE(_core, m)
 
     color::_bind(m);
     constants::_bind(m);
+    draw::_bind(m);
     event::_bind(m);
     key::_bind(m);
     math::_bind(m);
