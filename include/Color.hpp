@@ -15,6 +15,7 @@ struct Color
     uint8_t a = 255;
 
     operator SDL_Color() const { return {r, g, b, a}; }
+    operator SDL_FColor() const { return {r / 255.f, g / 255.f, b / 255.f, a / 255.f}; }
 };
 
 namespace color

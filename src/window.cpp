@@ -61,6 +61,8 @@ void _bind(pybind11::module_& module)
     subWindow.def("is_fullscreen", &window::isFullscreen,
                   "Check if the window is in fullscreen mode");
     subWindow.def("get_size", &window::getSize, "Get the current size of the window");
+    subWindow.def("get_title", &window::getTitle, "Get the current title of the window");
+    subWindow.def("set_title", &window::setTitle, py::arg("title"), "Set the title of the window");
 }
 
 SDL_Window* getWindow() { return _window; }
@@ -104,6 +106,8 @@ void create(const math::Vec2& resolution, const std::string& title, const bool s
                                               SDL_LOGICAL_PRESENTATION_LETTERBOX))
             throw std::runtime_error(SDL_GetError());
     }
+
+    SDL_SetRenderDrawBlendMode(_renderer, SDL_BLENDMODE_BLEND);
 
     _isOpen = true;
 }
@@ -168,6 +172,30 @@ bool isFullscreen()
     return (SDL_GetWindowFlags(_window) & SDL_WINDOW_FULLSCREEN) == SDL_WINDOW_FULLSCREEN;
 }
 
+void setTitle(const std::string& title)
+{
+    if (!_window)
+        throw std::runtime_error("Window not initialized");
+
+    if (title.empty())
+        throw std::invalid_argument("Title cannot be empty");
+
+    if (title.size() > 255)
+        throw std::invalid_argument("Title cannot exceed 255 characters");
+
+    if (!SDL_SetWindowTitle(_window, title.c_str()))
+        throw std::runtime_error(SDL_GetError());
+}
+
+std::string getTitle()
+{
+    if (!_window)
+        throw std::runtime_error("Window not initialized");
+
+    const char* title = SDL_GetWindowTitle(_window);
+
+    return std::string(title);
+}
 } // namespace window
 
 void init()
@@ -175,7 +203,7 @@ void init()
     if (_window || _renderer)
         return;
 
-    if (!SDL_Init(SDL_INIT_VIDEO))
+    if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_GAMEPAD))
         throw std::runtime_error(SDL_GetError());
 }
 

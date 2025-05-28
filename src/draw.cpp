@@ -6,8 +6,12 @@
 
 #include <SDL3/SDL.h>
 #include <gfx/SDL3_gfxPrimitives.h>
+#include <set>
 
-#define P(dx, dy) {float(center.x + dx), float(center.y + dy)}
+static Uint64 packPoint(int x, int y)
+{
+    return (Uint64(uint32_t(x + 32768)) << 32) | uint32_t(y + 32768);
+}
 
 namespace draw
 {
@@ -102,9 +106,15 @@ void _bind(pybind11::module_& module)
         [](const py::sequence& centerparam, const int radius, const py::sequence& color,
            const int thickness)
         {
+            if (radius < 1)
+                return;
+
             if (py::isinstance<math::Vec2>(centerparam) && py::isinstance<Color>(color))
             {
-                circle(centerparam.cast<math::Vec2>(), radius, color.cast<Color>(), thickness);
+                thickness == 1
+                    ? circleThin(centerparam.cast<math::Vec2>(), radius, color.cast<Color>())
+                    : circle(centerparam.cast<math::Vec2>(), radius, color.cast<Color>(),
+                             thickness);
                 return;
             }
 
@@ -120,7 +130,7 @@ void _bind(pybind11::module_& module)
                                color[2].cast<uint8_t>(),
                                color.size() == 4 ? color[3].cast<uint8_t>() : 255};
 
-            circle(c, radius, col, thickness);
+            thickness == 1 ? circleThin(c, radius, col) : circle(c, radius, col, thickness);
         },
         py::arg("center"), py::arg("radius"), py::arg("color"), py::arg("thickness") = 1);
 }
@@ -156,11 +166,12 @@ void rect(const Rect& rect, const Color& color, const int thickness)
 
 void line(const math::Vec2& start, const math::Vec2& end, const Color& color, const int thickness)
 {
+    if (thickness < 1)
+        return;
+
     SDL_Renderer* r = window::getRenderer();
     if (r == nullptr)
-    {
         throw std::runtime_error("Renderer not initialized");
-    }
 
     const auto x1 = static_cast<Sint16>(start.x);
     const auto y1 = static_cast<Sint16>(start.y);
@@ -185,53 +196,141 @@ void point(const math::Vec2& point, const Color& color)
     SDL_RenderPoint(r, px, py);
 }
 
-void circle(const math::Vec2& center, int radius, const Color& color, const int thickness)
+void circleThin(const math::Vec2& center, const int radius, const Color& color)
 {
-    SDL_Renderer* r = window::getRenderer();
-    if (r == nullptr)
+    SDL_Renderer* renderer = window::getRenderer();
+    if (!renderer)
         throw std::runtime_error("Renderer not initialized");
 
-    if (radius < 1)
-        radius = 1;
+    SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a);
 
-    SDL_SetRenderDrawColor(r, color.r, color.g, color.b, color.a);
-
+    int f = 1 - radius;
+    int ddF_x = 0;
+    int ddF_y = -2 * radius;
     int x = 0;
     int y = radius;
-    int d = 3 - (radius << 1);
-    const bool skipCorner = (radius == 4);
-    int lastY = -1;
 
-    const SDL_FPoint points[] = {
-        P(x, y), P(x, -y), P(-x, y), P(-x, -y), P(y, x), P(y, -x), P(-y, x), P(-y, -x),
-    };
-    SDL_RenderPoints(r, points, 8);
+    std::set<Uint64> pointSet;
+
+    auto emit = [&](int dx, int dy)
+    { pointSet.insert(packPoint(int(center.x + dx), int(center.y + dy))); };
 
     while (x <= y)
     {
-        if (x == y && y == lastY)
-        {
-            x++;
-            continue;
-        }
-        lastY = y;
+        emit(x, y);
+        emit(-x, y);
+        emit(x, -y);
+        emit(-x, -y);
+        emit(y, x);
+        emit(-y, x);
+        emit(y, -x);
+        emit(-y, -x);
 
-        if (d & 0x80000000)
-            d += (x << 2) + 6;
-        else
+        if (f >= 0)
         {
-            d += ((x - y) << 2) + 10;
             y--;
+            ddF_y += 2;
+            f += ddF_y;
         }
         x++;
+        ddF_x += 2;
+        f += ddF_x + 1;
+    }
 
-        if (skipCorner && x == y)
-            continue;
+    // Convert to SDL_FPoint vector
+    std::vector<SDL_FPoint> points;
+    points.reserve(pointSet.size());
+    for (auto packed : pointSet)
+    {
+        int x = int(int32_t(packed >> 32)) - 32768;
+        int y = int(int32_t(packed & 0xFFFFFFFF)) - 32768;
+        points.push_back(SDL_FPoint{float(x), float(y)});
+    }
 
-        const SDL_FPoint points[] = {
-            P(x, y), P(x, -y), P(-x, y), P(-x, -y), P(y, x), P(y, -x), P(-y, x), P(-y, -x),
-        };
-        SDL_RenderPoints(r, points, 8);
+    SDL_RenderPoints(renderer, points.data(), static_cast<int>(points.size()));
+}
+
+void circle(const math::Vec2& center, int radius, const Color& color, int thickness)
+{
+    SDL_Renderer* renderer = window::getRenderer();
+    if (!renderer)
+        throw std::runtime_error("Renderer not initialized");
+
+    SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a);
+
+    const int innerRadius = (thickness <= 0 || thickness >= radius) ? -1 : radius - thickness;
+
+    auto hline = [&](int x1, int y, int x2)
+    {
+        SDL_RenderLine(renderer, static_cast<float>(x1), static_cast<float>(y),
+                       static_cast<float>(x2), static_cast<float>(y));
+    };
+
+    auto drawCircleSpan = [&](int r, std::unordered_map<int, std::pair<int, int>>& bounds)
+    {
+        int x = 0;
+        int y = r;
+        int d = 3 - 2 * r;
+
+        while (x <= y)
+        {
+            auto update = [&](int y_offset, int xval)
+            {
+                int yPos = static_cast<int>(center.y) + y_offset;
+                int minX = static_cast<int>(center.x) - xval;
+                int maxX = static_cast<int>(center.x) + xval;
+                bounds[yPos].first = std::min(bounds[yPos].first, minX);
+                bounds[yPos].second = std::max(bounds[yPos].second, maxX);
+            };
+
+            for (int sign : {-1, 1})
+            {
+                update(sign * y, x);
+                update(sign * x, y);
+            }
+
+            if (d < 0)
+                d += 4 * x + 6;
+            else
+            {
+                d += 4 * (x - y) + 10;
+                y--;
+            }
+            x++;
+        }
+    };
+
+    std::unordered_map<int, std::pair<int, int>> outerBounds;
+    std::unordered_map<int, std::pair<int, int>> innerBounds;
+
+    // Initialize bounds with max/mins
+    for (int i = -radius; i <= radius; ++i)
+    {
+        outerBounds[static_cast<int>(center.y) + i] = {INT_MAX, INT_MIN};
+        innerBounds[static_cast<int>(center.y) + i] = {INT_MAX, INT_MIN};
+    }
+
+    drawCircleSpan(radius, outerBounds);
+    drawCircleSpan(innerRadius, innerBounds);
+
+    for (const auto& [y, outer] : outerBounds)
+    {
+        const auto& inner = innerBounds[y];
+
+        if (inner.first == INT_MAX || inner.second == INT_MIN)
+        {
+            // No inner circle on this line → full span
+            hline(outer.first, y, outer.second);
+        }
+        else
+        {
+            // Left ring
+            if (outer.first < inner.first)
+                hline(outer.first, y, inner.first - 1);
+            // Right ring
+            if (outer.second > inner.second)
+                hline(inner.second + 1, y, outer.second);
+        }
     }
 }
 

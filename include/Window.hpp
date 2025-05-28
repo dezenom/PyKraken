@@ -40,4 +40,8 @@ float getScale();
 void setFullscreen(bool fullscreen);
 
 bool isFullscreen();
+
+void setTitle(const std::string& title);
+
+std::string getTitle();
 } // namespace window
