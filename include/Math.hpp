@@ -102,13 +102,13 @@ class Vec2
 
     Vec2 operator+(const Vec2& other) const;
     Vec2 operator-(const Vec2& other) const;
-    Vec2 operator*(py::float_ scalar) const;
-    Vec2 operator/(py::float_ scalar) const;
+    Vec2 operator*(double scalar) const;
+    Vec2 operator/(double scalar) const;
 
     Vec2& operator+=(const Vec2& other);
     Vec2& operator-=(const Vec2& other);
-    Vec2& operator*=(py::float_ scalar);
-    Vec2& operator/=(py::float_ scalar);
+    Vec2& operator*=(double scalar);
+    Vec2& operator/=(double scalar);
 
     bool operator==(const Vec2& other) const;
     bool operator!=(const Vec2& other) const;
@@ -121,6 +121,6 @@ class Vec2
     operator SDL_FPoint() const;
 };
 
-Vec2 operator*(py::float_ lhs, const Vec2& rhs);
+Vec2 operator*(double lhs, const Vec2& rhs);
 
 } // namespace math

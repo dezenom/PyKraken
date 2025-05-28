@@ -2,6 +2,7 @@
 #include "Constants.hpp"
 #include "Draw.hpp"
 #include "Event.hpp"
+#include "Gamepad.hpp"
 #include "Key.hpp"
 #include "Math.hpp"
 #include "Mouse.hpp"
@@ -18,6 +19,7 @@ PYBIND11_MODULE(_core, m)
     constants::_bind(m);
     draw::_bind(m);
     event::_bind(m);
+    gamepad::_bind(m);
     key::_bind(m);
     math::_bind(m);
     mouse::_bind(m);

@@ -6,6 +6,7 @@ namespace key
 void _bind(py::module_& module)
 {
     auto subKey = module.def_submodule("key", "Key related functions");
+    
     subKey.def("is_pressed", static_cast<bool (*)(SDL_Scancode)>(&isPressed),
                "Check if a key is pressed by scancode");
     subKey.def("is_just_pressed", static_cast<bool (*)(SDL_Scancode)>(&isJustPressed),

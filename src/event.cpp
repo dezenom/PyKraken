@@ -1,4 +1,5 @@
 #include "Event.hpp"
+#include "Gamepad.hpp"
 #include "Window.hpp"
 #include "_globals.hpp"
 
@@ -21,6 +22,8 @@ void _bind(py::module_& module)
 
 std::vector<knEvent> poll()
 {
+    gamepad::_clearStates();
+
     std::vector<knEvent> events;
     SDL_Event event;
 
@@ -37,6 +40,9 @@ std::vector<knEvent> poll()
     while (SDL_PollEvent(&event))
     {
         knEvent e(event.type);
+
+        gamepad::_handleEvents(event);
+
         switch (event.type)
         {
         case SDL_EVENT_QUIT:

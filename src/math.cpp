@@ -426,13 +426,13 @@ Vec2 Vec2::operator-() const { return {-x, -y}; }
 
 Vec2 Vec2::operator+(const Vec2& other) const { return {x + other.x, y + other.y}; }
 Vec2 Vec2::operator-(const Vec2& other) const { return {x - other.x, y - other.y}; }
-Vec2 Vec2::operator*(py::float_ scalar) const
+Vec2 Vec2::operator*(double scalar) const
 {
-    return {x * scalar.cast<double>(), y * scalar.cast<double>()};
+    return {x * scalar, y * scalar};
 }
-Vec2 Vec2::operator/(py::float_ scalar) const
+Vec2 Vec2::operator/(double scalar) const
 {
-    return {x / scalar.cast<double>(), y / scalar.cast<double>()};
+    return {x / scalar, y / scalar};
 }
 
 Vec2& Vec2::operator+=(const Vec2& other)
@@ -447,20 +447,20 @@ Vec2& Vec2::operator-=(const Vec2& other)
     y -= other.y;
     return *this;
 }
-Vec2& Vec2::operator*=(py::float_ scalar)
+Vec2& Vec2::operator*=(double scalar)
 {
-    x *= scalar.cast<double>();
-    y *= scalar.cast<double>();
+    x *= scalar;
+    y *= scalar;
     return *this;
 }
-Vec2& Vec2::operator/=(py::float_ scalar)
+Vec2& Vec2::operator/=(double scalar)
 {
-    x /= scalar.cast<double>();
-    y /= scalar.cast<double>();
+    x /= scalar;
+    y /= scalar;
     return *this;
 }
 
-Vec2 operator*(py::float_ lhs, const Vec2& rhs) { return rhs * lhs; }
+Vec2 operator*(double lhs, const Vec2& rhs) { return rhs * lhs; }
 
 bool Vec2::operator==(const Vec2& other) const { return (*this - other).isZero(); }
 bool Vec2::operator!=(const Vec2& other) const { return !(*this == other); }

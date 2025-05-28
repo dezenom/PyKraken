@@ -11,13 +11,12 @@ class Player:
         self.rect = kn.Rect(0, 0, 10, 10)
         self.speed = 100
         
+        self.curr_pad = 0
+        
     def update(self, delta: float):
-        dir_vec = kn.Vec2(
-            kn.key.is_pressed(kn.S_d) - kn.key.is_pressed(kn.S_a),
-            kn.key.is_pressed(kn.S_s) - kn.key.is_pressed(kn.S_w)
-        )
-        if dir_vec:
-            dir_vec.normalize()
+        if kn.key.is_just_pressed(kn.S_SPACE):
+            self.curr_pad = 1 if self.curr_pad == 0 else 0
+        dir_vec = kn.gamepad.get_left_stick(self.curr_pad)
         
         self.pos += dir_vec * self.speed * delta
         self.rect.center = self.pos
