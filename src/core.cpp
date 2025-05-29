@@ -9,6 +9,7 @@
 #include "Rect.hpp"
 #include "Time.hpp"
 #include "Window.hpp"
+#include "Input.hpp"
 
 PYBIND11_MODULE(_core, m)
 {
@@ -20,6 +21,7 @@ PYBIND11_MODULE(_core, m)
     draw::_bind(m);
     event::_bind(m);
     gamepad::_bind(m);
+    input::_bind(m);
     key::_bind(m);
     math::_bind(m);
     mouse::_bind(m);

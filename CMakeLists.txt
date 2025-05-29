@@ -21,6 +21,7 @@ pybind11_add_module(_core MODULE
   src/draw.cpp
   src/event.cpp
   src/gamepad.cpp
+  src/input.cpp
   src/key.cpp
   src/math.cpp
   src/mouse.cpp
