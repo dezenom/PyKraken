@@ -19,6 +19,7 @@ pybind11_add_module(_core MODULE
   src/constants.cpp
   src/core.cpp
   src/draw.cpp
+  src/ease.cpp
   src/event.cpp
   src/gamepad.cpp
   src/input.cpp

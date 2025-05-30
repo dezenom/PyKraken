@@ -56,6 +56,30 @@ void _bind(py::module_& module)
         .def("lerp", &lerp, py::arg("a"), py::arg("b"), py::arg("t") = 0.5,
              "Linearly interpolate between two Colors.")
         .def("invert", &invert, py::arg("color"), "Invert the given Color.");
+
+    // Predefined colors
+    subColor.attr("BLACK") = BLACK;
+    subColor.attr("WHITE") = WHITE;
+    subColor.attr("RED") = RED;
+    subColor.attr("GREEN") = GREEN;
+    subColor.attr("BLUE") = BLUE;
+    subColor.attr("YELLOW") = YELLOW;
+    subColor.attr("MAGENTA") = MAGENTA;
+    subColor.attr("CYAN") = CYAN;
+    subColor.attr("GRAY") = GRAY;
+    subColor.attr("GREY") = GRAY;
+    subColor.attr("DARK_GRAY") = DARK_GRAY;
+    subColor.attr("DARK_GREY") = DARK_GRAY;
+    subColor.attr("LIGHT_GRAY") = LIGHT_GRAY;
+    subColor.attr("LIGHT_GREY") = LIGHT_GRAY;
+    subColor.attr("ORANGE") = ORANGE;
+    subColor.attr("BROWN") = BROWN;
+    subColor.attr("PINK") = PINK;
+    subColor.attr("PURPLE") = PURPLE;
+    subColor.attr("NAVY") = NAVY;
+    subColor.attr("TEAL") = TEAL;
+    subColor.attr("OLIVE") = OLIVE;
+    subColor.attr("MAROON") = MAROON;
 }
 
 Color fromHex(std::string_view hex)

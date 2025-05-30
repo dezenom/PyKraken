@@ -1,0 +1,70 @@
+Kraken Engine Documentation
+===========================
+
+**Kraken Engine** is a fast, lightweight 2D game framework built on top of *SDL3* and other toolkit libraries.
+It's designed to offer just the right balance between high-level convenience and low-level control, making it ideal for both hobbyists and experienced developers.
+
+Whether you're crafting a minimalist arcade game or building a fully-featured side-scrolling adventure, Kraken gives you the tools to develop confidently and creatively.
+
+Overview
+--------
+
+Kraken wraps common patterns into intuitive systems in a rich set of utilities tailored for game development.
+Features include:
+
+- 🎮 **Unified Input System** — A clean abstraction over keyboard, mouse, and controller input with support for just-pressed and just-released logic, input rebinding, and axis detection.
+- 🧭 **Animation Controller** — Effortlessly manage sprite sheet animations with flexible frame control and transitions.
+- 🧱 **Tile Map Support** — Load and render Tiled TMX maps with support for layers, object groups, and tile flipping.
+- 🔊 **Audio Management** — Stream music, trigger sound effects, and adjust volume levels with simple API calls.
+- 🧮 **Math Utilities** — Includes custom vector objects, easing functions, time utilities, and other game-dev math helpers.
+- 🧊 **Image Masking** — Perform pixel-perfect collision detection using masks for precise gameplay logic.
+
+Getting Started
+---------------
+
+If you're new to Kraken, the best place to begin is the :doc:`getting_started/installation` guide.
+Kraken Engine scripting is written in Python and requires a basic understanding of the language.
+Over time, the API is evolving to be even more beginner-friendly.
+
+Planned Features
+----------------
+
+Kraken is actively growing. Upcoming additions include:
+
+- A 2D **physics engine** with collision detection and response
+- Built-in **pathfinding** (A*, grid-based nav)
+- Basic **raycasting**
+- A **modular UI system** (planned)
+- Multiplayer/networking utilities
+
+The goal is to offer a full development toolkit while staying simple, performant, and hackable.
+
+Community & Support
+-------------------
+
+Join the `Discord Community <https://discord.gg/GyyddE7AD5>`_ to connect with other developers, get help, or contribute to the engine.
+Kraken is a solo passion project with an open-source spirit — contributions and feedback are always welcome!
+
+Showcase
+--------
+
+Curious what others have made with Kraken Engine?  
+Check out the top entries from our :doc:`most recent game jam <showcase/springjam25>`.
+
+These projects highlight the creativity and flexibility Kraken offers.
+Want to be featured? Submit your game to the next jam or share it on our Discord!
+
+.. toctree::
+    :hidden:
+    :maxdepth: 1
+    :caption: Showcase
+    
+    showcase/springjam25
+
+.. toctree::
+    :hidden:
+    :maxdepth: 1
+    :caption: API Reference
+
+    reference/mouse
+

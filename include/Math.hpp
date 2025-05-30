@@ -1,6 +1,5 @@
 #pragma once
 
-#include <ostream>
 #include <pybind11/pybind11.h>
 
 namespace py = pybind11;

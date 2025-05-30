@@ -39,7 +39,6 @@ constexpr Color YELLOW = {255, 255, 0};
 constexpr Color MAGENTA = {255, 0, 255};
 constexpr Color CYAN = {0, 255, 255};
 constexpr Color GRAY = {128, 128, 128};
-constexpr Color GREY = GRAY;
 constexpr Color DARK_GRAY = {64, 64, 64};
 constexpr Color LIGHT_GRAY = {192, 192, 192};
 constexpr Color ORANGE = {255, 165, 0};
@@ -49,4 +48,5 @@ constexpr Color PURPLE = {128, 0, 128};
 constexpr Color NAVY = {0, 0, 128};
 constexpr Color TEAL = {0, 128, 128};
 constexpr Color OLIVE = {128, 128, 0};
+constexpr Color MAROON = {128, 0, 0};
 } // namespace color
