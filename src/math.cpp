@@ -12,9 +12,7 @@ namespace math
 {
 void _bind(py::module_& module)
 {
-    auto subMath = module.def_submodule("math", "Math related functions");
-
-    py::class_<PolarCoordinate>(subMath, "PolarCoordinate")
+    py::class_<PolarCoordinate>(module, "PolarCoordinate")
         .def(py::init())
         .def(py::init(
                  [](py::sequence s)
@@ -74,9 +72,8 @@ void _bind(py::module_& module)
                  std::size_t hr = std::hash<double>{}(p.radius);
                  return ha ^ (hr << 1);
              });
-    module.attr("PolarCoordinate") = subMath.attr("PolarCoordinate");
 
-    py::class_<Vec2>(subMath, "Vec2")
+    py::class_<Vec2>(module, "Vec2")
         .def(py::init(), "Create a zero vector")
         .def(py::init<double>(), py::arg("value"),
              "Create a Vec2 with both x and y set to the same value")
@@ -248,7 +245,8 @@ void _bind(py::module_& module)
         .def("scale_to_length", &Vec2::scaleToLength, py::arg("length"))
         .def("distance_to", &Vec2::distanceTo, py::arg("other"))
         .def("to_polar", &Vec2::toPolar, "Return a polar coordinate pair (angle, length)");
-    module.attr("Vec2") = subMath.attr("Vec2");
+
+    auto subMath = module.def_submodule("math", "Math related functions");
 
     subMath.def("scale_to_length", &scaleToLength, "Scale a vector to a given length");
     subMath.def("from_polar", static_cast<Vec2 (*)(double, double)>(&fromPolar), py::arg("angle"),
@@ -426,14 +424,8 @@ Vec2 Vec2::operator-() const { return {-x, -y}; }
 
 Vec2 Vec2::operator+(const Vec2& other) const { return {x + other.x, y + other.y}; }
 Vec2 Vec2::operator-(const Vec2& other) const { return {x - other.x, y - other.y}; }
-Vec2 Vec2::operator*(double scalar) const
-{
-    return {x * scalar, y * scalar};
-}
-Vec2 Vec2::operator/(double scalar) const
-{
-    return {x / scalar, y / scalar};
-}
+Vec2 Vec2::operator*(double scalar) const { return {x * scalar, y * scalar}; }
+Vec2 Vec2::operator/(double scalar) const { return {x / scalar, y / scalar}; }
 
 Vec2& Vec2::operator+=(const Vec2& other)
 {

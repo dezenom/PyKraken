@@ -3,14 +3,6 @@
 #include <SDL3/SDL.h>
 #include <unordered_map>
 
-// Scancodes
-extern bool g_scancodePressed[SDL_SCANCODE_COUNT];
-extern bool g_scancodeReleased[SDL_SCANCODE_COUNT];
-
-// Keycodes
-extern std::unordered_map<SDL_Keycode, bool> g_keycodePressed;
-extern std::unordered_map<SDL_Keycode, bool> g_keycodeReleased;
-
 // Mouse buttons
 constexpr size_t MOUSE_BUTTON_COUNT = 5;
 extern bool g_mousePressed[MOUSE_BUTTON_COUNT];

@@ -15,6 +15,7 @@ pybind11_add_module(_core MODULE
   src/gfx/SDL3_gfxPrimitives.cpp
   src/gfx/SDL3_rotozoom.cpp
   src/_globals.cpp
+  src/camera.cpp
   src/color.cpp
   src/constants.cpp
   src/core.cpp

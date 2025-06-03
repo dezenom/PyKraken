@@ -19,9 +19,7 @@ static std::unordered_map<std::string, std::vector<InputAction>> _inputBindings;
 
 void _bind(py::module_& module)
 {
-    auto subInput = module.def_submodule("input", "Input handling related functions");
-
-    py::class_<InputAction>(subInput, "InputAction")
+    py::class_<InputAction>(module, "InputAction")
         .def(py::init<SDL_Scancode>(), py::arg("scancode"), "Create an InputAction from a scancode")
         .def(py::init<KnKeycode>(), py::arg("keycode"), "Create an InputAction from a keycode")
         .def(py::init<knMouseButton>(), py::arg("mouse_button"),
@@ -31,7 +29,8 @@ void _bind(py::module_& module)
         .def(py::init<SDL_GamepadAxis, bool, int>(), py::arg("gamepad_axis"),
              py::arg("is_positive"), py::arg("slot") = 0,
              "Create an InputAction from a gamepad axis and slot");
-    module.attr("InputAction") = subInput.attr("InputAction");
+
+    auto subInput = module.def_submodule("input", "Input handling related functions");
 
     subInput.def(
         "bind",

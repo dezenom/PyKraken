@@ -14,9 +14,7 @@ namespace ease
 {
 void _bind(py::module_& module)
 {
-    auto subEase = module.def_submodule("ease", "Easing functions and animations");
-
-    py::class_<EasingAnimation>(subEase, "EasingAnimation")
+    py::class_<EasingAnimation>(module, "EasingAnimation")
         .def(
             py::init(
                 [](py::object start, py::object end, double duration, EasingFunction easeFunc)
@@ -35,7 +33,8 @@ void _bind(py::module_& module)
         .def("reverse", &EasingAnimation::reverse, "Reverse the direction of the animation")
         .def_property_readonly("is_done", &EasingAnimation::isDone,
                                "Check if the animation is done");
-    module.attr("EasingAnimation") = subEase.attr("EasingAnimation");
+
+    auto subEase = module.def_submodule("ease", "Easing functions and animations");
 
     subEase.def("linear", &linear, "Linear easing function");
     subEase.def("in_quad", &inQuad, "In Quad easing function");

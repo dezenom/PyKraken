@@ -21,116 +21,179 @@ void _bind(pybind11::module_& module)
 
     subDraw.def(
         "rect",
-        [](const py::sequence& rectparam, const py::sequence& color, const int thickness)
+        [](const py::object& rectparam, const py::object& colorparam, const int thickness)
         {
-            if (py::isinstance<Rect>(rectparam) && py::isinstance<Color>(color))
+            Rect r;
+            Color c;
+
+            if (py::isinstance<Rect>(rectparam))
             {
-                rect(rectparam.cast<Rect>(), color.cast<Color>(), thickness);
-                return;
+                r = rectparam.cast<Rect>();
+            }
+            else if (py::isinstance<py::sequence>(rectparam))
+            {
+                const py::sequence rectSeq = rectparam.cast<py::sequence>();
+                if (rectSeq.size() != 4)
+                    throw std::invalid_argument("Rect must be (x, y, width, height)");
+                r = {rectSeq[0].cast<double>(), rectSeq[1].cast<double>(),
+                     rectSeq[2].cast<double>(), rectSeq[3].cast<double>()};
+            }
+            else
+            {
+                throw std::invalid_argument(
+                    "Invalid rect type. Must be Rect or sequence of 4 numbers.");
             }
 
-            if (rectparam.size() != 4)
-                throw std::invalid_argument("Rect must be a sequence of (x, y, width, height)");
-
-            if (color.size() != 3 && color.size() != 4)
+            if (py::isinstance<Color>(colorparam))
+            {
+                c = colorparam.cast<Color>();
+            }
+            else if (py::isinstance<py::sequence>(colorparam))
+            {
+                const py::sequence colorSeq = colorparam.cast<py::sequence>();
+                if (colorSeq.size() != 3 && colorSeq.size() != 4)
+                    throw std::invalid_argument("Color must be (r, g, b) or (r, g, b, a)");
+                c = {colorSeq[0].cast<uint8_t>(), colorSeq[1].cast<uint8_t>(),
+                     colorSeq[2].cast<uint8_t>(),
+                     colorSeq.size() == 4 ? colorSeq[3].cast<uint8_t>()
+                                          : static_cast<uint8_t>(255)};
+            }
+            else
+            {
                 throw std::invalid_argument(
-                    "Color must be a sequence of (r, g, b) or (r, g, b, a)");
-
-            const Rect r = {rectparam[0].cast<double>(), rectparam[1].cast<double>(),
-                            rectparam[2].cast<double>(), rectparam[3].cast<double>()};
-            const Color c = {color[0].cast<uint8_t>(), color[1].cast<uint8_t>(),
-                             color[2].cast<uint8_t>(),
-                             color.size() == 4 ? color[3].cast<uint8_t>() : 255};
+                    "Invalid color type. Must be Color or sequence of 3-4 numbers.");
+            }
 
             rect(r, c, thickness);
         },
         py::arg("rect"), py::arg("color"), py::arg("thickness") = 0);
+
     subDraw.def(
         "line",
-        [](const py::sequence& start, const py::sequence& end, const py::sequence& color,
-           const int thickness)
+        [](const py::object& start, const py::object& end, const py::object& color, int thickness)
         {
-            if (py::isinstance<math::Vec2>(start) && py::isinstance<math::Vec2>(end) &&
-                py::isinstance<Color>(color))
+            math::Vec2 s, e;
+            Color c;
+
+            // Parse start
+            if (py::isinstance<math::Vec2>(start))
+                s = start.cast<math::Vec2>();
+            else if (py::isinstance<py::sequence>(start) && start.cast<py::sequence>().size() == 2)
+                s = {start.cast<py::sequence>()[0].cast<double>(),
+                     start.cast<py::sequence>()[1].cast<double>()};
+            else
+                throw std::invalid_argument("Start must be a Vec2 or a sequence of two floats");
+
+            // Parse end
+            if (py::isinstance<math::Vec2>(end))
+                e = end.cast<math::Vec2>();
+            else if (py::isinstance<py::sequence>(end) && end.cast<py::sequence>().size() == 2)
+                e = {end.cast<py::sequence>()[0].cast<double>(),
+                     end.cast<py::sequence>()[1].cast<double>()};
+            else
+                throw std::invalid_argument("End must be a Vec2 or a sequence of two floats");
+
+            // Parse color
+            if (py::isinstance<Color>(color))
+                c = color.cast<Color>();
+            else if (py::isinstance<py::sequence>(color))
             {
-                line(start.cast<math::Vec2>(), end.cast<math::Vec2>(), color.cast<Color>(),
-                     thickness);
-                return;
+                auto seq = color.cast<py::sequence>();
+                if (seq.size() != 3 && seq.size() != 4)
+                    throw std::invalid_argument(
+                        "Color must be a sequence of (r, g, b) or (r, g, b, a)");
+                c = {seq[0].cast<uint8_t>(), seq[1].cast<uint8_t>(), seq[2].cast<uint8_t>(),
+                     seq.size() == 4 ? seq[3].cast<uint8_t>() : static_cast<uint8_t>(255)};
             }
-
-            if (start.size() != 2)
-                throw std::invalid_argument("Start point must be a sequence of (x, y)");
-
-            if (end.size() != 2)
-                throw std::invalid_argument("End point must be a sequence of (x, y)");
-
-            if (color.size() != 3 && color.size() != 4)
+            else
                 throw std::invalid_argument(
-                    "Color must be a sequence of (r, g, b) or (r, g, b, a)");
-
-            const math::Vec2 s = {start[0].cast<double>(), start[1].cast<double>()};
-            const math::Vec2 e = {end[0].cast<double>(), end[1].cast<double>()};
-            const Color c = {color[0].cast<uint8_t>(), color[1].cast<uint8_t>(),
-                             color[2].cast<uint8_t>(),
-                             color.size() == 4 ? color[3].cast<uint8_t>() : 255};
+                    "Color must be a Color or a sequence of 3 or 4 integers");
 
             line(s, e, c, thickness);
         },
         py::arg("start"), py::arg("end"), py::arg("color"), py::arg("thickness") = 1);
-    subDraw.def("point",
-                [](const py::sequence& pointparam, const py::sequence& color)
-                {
-                    if (py::isinstance<math::Vec2>(pointparam) && py::isinstance<Color>(color))
-                    {
-                        point(pointparam.cast<math::Vec2>(), color.cast<Color>());
-                        return;
-                    }
 
-                    if (pointparam.size() != 2)
-                        throw std::invalid_argument("Point must be a sequence of (x, y)");
+    subDraw.def(
+        "point",
+        [](const py::object& pointparam, const py::object& color)
+        {
+            math::Vec2 p;
+            Color c;
 
-                    if (color.size() != 3 && color.size() != 4)
-                        throw std::invalid_argument(
-                            "Color must be a sequence of (r, g, b) or (r, g, b, a)");
+            // Parse point
+            if (py::isinstance<math::Vec2>(pointparam))
+                p = pointparam.cast<math::Vec2>();
+            else if (py::isinstance<py::sequence>(pointparam) &&
+                     pointparam.cast<py::sequence>().size() == 2)
+            {
+                auto seq = pointparam.cast<py::sequence>();
+                p = {seq[0].cast<double>(), seq[1].cast<double>()};
+            }
+            else
+                throw std::invalid_argument("Point must be a Vec2 or a sequence of two floats");
 
-                    const math::Vec2 p = {pointparam[0].cast<double>(),
-                                          pointparam[1].cast<double>()};
-                    const Color c = {color[0].cast<uint8_t>(), color[1].cast<uint8_t>(),
-                                     color[2].cast<uint8_t>(),
-                                     color.size() == 4 ? color[3].cast<uint8_t>() : 255};
+            // Parse color
+            if (py::isinstance<Color>(color))
+                c = color.cast<Color>();
+            else if (py::isinstance<py::sequence>(color))
+            {
+                auto seq = color.cast<py::sequence>();
+                if (seq.size() != 3 && seq.size() != 4)
+                    throw std::invalid_argument(
+                        "Color must be a sequence of (r, g, b) or (r, g, b, a)");
+                c = {seq[0].cast<uint8_t>(), seq[1].cast<uint8_t>(), seq[2].cast<uint8_t>(),
+                     seq.size() == 4 ? seq[3].cast<uint8_t>() : static_cast<uint8_t>(255)};
+            }
+            else
+                throw std::invalid_argument(
+                    "Color must be a Color or a sequence of 3 or 4 integers");
 
-                    point(p, c);
-                });
+            point(p, c);
+        },
+        py::arg("point"), py::arg("color"));
+
     subDraw.def(
         "circle",
-        [](const py::sequence& centerparam, const int radius, const py::sequence& color,
-           const int thickness)
+        [](const py::object& centerparam, int radius, const py::object& color, int thickness)
         {
             if (radius < 1)
                 return;
 
-            if (py::isinstance<math::Vec2>(centerparam) && py::isinstance<Color>(color))
+            math::Vec2 center;
+            Color col;
+
+            // Parse center
+            if (py::isinstance<math::Vec2>(centerparam))
+                center = centerparam.cast<math::Vec2>();
+            else if (py::isinstance<py::sequence>(centerparam) &&
+                     centerparam.cast<py::sequence>().size() == 2)
             {
-                thickness == 1
-                    ? circleThin(centerparam.cast<math::Vec2>(), radius, color.cast<Color>())
-                    : circle(centerparam.cast<math::Vec2>(), radius, color.cast<Color>(),
-                             thickness);
-                return;
+                auto seq = centerparam.cast<py::sequence>();
+                center = {seq[0].cast<double>(), seq[1].cast<double>()};
             }
+            else
+                throw std::invalid_argument("Center must be a Vec2 or a sequence of two floats");
 
-            if (centerparam.size() != 2)
-                throw std::invalid_argument("Center must be a sequence of (x, y)");
-
-            if (color.size() != 3 && color.size() != 4)
+            // Parse color
+            if (py::isinstance<Color>(color))
+                col = color.cast<Color>();
+            else if (py::isinstance<py::sequence>(color))
+            {
+                auto seq = color.cast<py::sequence>();
+                if (seq.size() != 3 && seq.size() != 4)
+                    throw std::invalid_argument(
+                        "Color must be a sequence of (r, g, b) or (r, g, b, a)");
+                col = {seq[0].cast<uint8_t>(), seq[1].cast<uint8_t>(), seq[2].cast<uint8_t>(),
+                       seq.size() == 4 ? seq[3].cast<uint8_t>() : static_cast<uint8_t>(255)};
+            }
+            else
                 throw std::invalid_argument(
-                    "Color must be a sequence of (r, g, b) or (r, g, b, a)");
+                    "Color must be a Color or a sequence of 3 or 4 integers");
 
-            const math::Vec2 c = {centerparam[0].cast<double>(), centerparam[1].cast<double>()};
-            const Color col = {color[0].cast<uint8_t>(), color[1].cast<uint8_t>(),
-                               color[2].cast<uint8_t>(),
-                               color.size() == 4 ? color[3].cast<uint8_t>() : 255};
-
-            thickness == 1 ? circleThin(c, radius, col) : circle(c, radius, col, thickness);
+            if (thickness == 1)
+                circleThin(center, radius, col);
+            else
+                circle(center, radius, col, thickness);
         },
         py::arg("center"), py::arg("radius"), py::arg("color"), py::arg("thickness") = 1);
 }

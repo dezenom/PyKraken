@@ -1,5 +1,4 @@
 import pykraken as kn
-import math as m
 
 kn.init()
 kn.window.create((200, 150), scaled=True)
@@ -25,7 +24,7 @@ class Player:
         kn.draw.line(self.pos, kn.mouse.get_pos(), (255, 0, 0), 1)
 
 playerA = Player(0)
-playerB = Player(1)
+# playerB = Player(1)
 color = kn.Color("#141414")
 
 kn.input.bind(

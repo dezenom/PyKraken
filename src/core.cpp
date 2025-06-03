@@ -1,3 +1,4 @@
+#include "Camera.hpp"
 #include "Color.hpp"
 #include "Constants.hpp"
 #include "Draw.hpp"
@@ -16,10 +17,11 @@ PYBIND11_MODULE(_core, m)
 {
     py::options options;
     options.disable_function_signatures();
-    
+
     m.def("init", &init, "Initialize Kraken Engine");
     m.def("quit", &quit, "Quit Kraken Engine");
 
+    camera::_bind(m);
     color::_bind(m);
     constants::_bind(m);
     draw::_bind(m);

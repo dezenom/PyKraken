@@ -1,10 +1,11 @@
 #include "Gamepad.hpp"
+#include "Event.hpp"
 #include "Math.hpp"
 
 #include <iostream>
 
-static constexpr int MAX_GAMEPADS = 4;
-static std::array<std::optional<SDL_JoystickID>, MAX_GAMEPADS> gamepadSlots;
+constexpr int MAX_GAMEPADS = 4;
+static std::array<std::optional<SDL_JoystickID>, MAX_GAMEPADS> _gamepadSlots;
 static std::unordered_map<SDL_JoystickID, GamepadState> _connectedPads;
 
 static bool verifySlot(int slot);
@@ -42,7 +43,7 @@ bool isPressed(SDL_GamepadButton button, int slot)
     if (!verifySlot(slot))
         return false;
 
-    SDL_JoystickID id = gamepadSlots.at(slot).value();
+    SDL_JoystickID id = _gamepadSlots.at(slot).value();
     const GamepadState& state = _connectedPads.at(id);
 
     return SDL_GetGamepadButton(state.pad, button);
@@ -53,7 +54,7 @@ bool isJustPressed(SDL_GamepadButton button, int slot)
     if (!verifySlot(slot))
         return false;
 
-    SDL_JoystickID id = gamepadSlots.at(slot).value();
+    SDL_JoystickID id = _gamepadSlots.at(slot).value();
     const GamepadState& state = _connectedPads.at(id);
 
     auto buttonIt = state.justPressed.find(button);
@@ -65,7 +66,7 @@ bool isJustReleased(SDL_GamepadButton button, int slot)
     if (!verifySlot(slot))
         return false;
 
-    SDL_JoystickID id = gamepadSlots.at(slot).value();
+    SDL_JoystickID id = _gamepadSlots.at(slot).value();
     const GamepadState& state = _connectedPads.at(id);
 
     auto buttonIt = state.justReleased.find(button);
@@ -77,7 +78,7 @@ math::Vec2 getLeftStick(int slot)
     if (!verifySlot(slot))
         return {};
 
-    SDL_JoystickID id = gamepadSlots.at(slot).value();
+    SDL_JoystickID id = _gamepadSlots.at(slot).value();
     const GamepadState& state = _connectedPads.at(id);
 
     math::Vec2 axes = {SDL_GetGamepadAxis(state.pad, SDL_GAMEPAD_AXIS_LEFTX),
@@ -94,7 +95,7 @@ math::Vec2 getRightStick(int slot)
     if (!verifySlot(slot))
         return {};
 
-    SDL_JoystickID id = gamepadSlots.at(slot).value();
+    SDL_JoystickID id = _gamepadSlots.at(slot).value();
     const GamepadState& state = _connectedPads.at(id);
 
     math::Vec2 axes = {SDL_GetGamepadAxis(state.pad, SDL_GAMEPAD_AXIS_RIGHTX),
@@ -111,7 +112,7 @@ double getLeftTrigger(int slot)
     if (!verifySlot(slot))
         return 0.0;
 
-    SDL_JoystickID id = gamepadSlots.at(slot).value();
+    SDL_JoystickID id = _gamepadSlots.at(slot).value();
     const GamepadState& state = _connectedPads.at(id);
 
     return SDL_GetGamepadAxis(state.pad, SDL_GAMEPAD_AXIS_LEFT_TRIGGER) /
@@ -123,7 +124,7 @@ double getRightTrigger(int slot)
     if (!verifySlot(slot))
         return 0.0;
 
-    SDL_JoystickID id = gamepadSlots.at(slot).value();
+    SDL_JoystickID id = _gamepadSlots.at(slot).value();
     const GamepadState& state = _connectedPads.at(id);
 
     return SDL_GetGamepadAxis(state.pad, SDL_GAMEPAD_AXIS_RIGHT_TRIGGER) /
@@ -135,7 +136,7 @@ void setDeadZone(float deadZone, int slot)
     if (!verifySlot(slot))
         return;
 
-    SDL_JoystickID id = gamepadSlots.at(slot).value();
+    SDL_JoystickID id = _gamepadSlots.at(slot).value();
     GamepadState& state = _connectedPads.at(id);
 
     state.deadZone = deadZone;
@@ -146,7 +147,7 @@ float getDeadZone(int slot)
     if (!verifySlot(slot))
         return 0.1f;
 
-    SDL_JoystickID id = gamepadSlots.at(slot).value();
+    SDL_JoystickID id = _gamepadSlots.at(slot).value();
     const GamepadState& state = _connectedPads.at(id);
 
     return state.deadZone;
@@ -157,7 +158,7 @@ std::vector<int> getConnectedSlots()
     std::vector<int> slots;
     for (int i = 0; i < MAX_GAMEPADS; ++i)
     {
-        if (gamepadSlots.at(i).has_value())
+        if (_gamepadSlots.at(i).has_value())
         {
             slots.push_back(i);
         }
@@ -174,22 +175,22 @@ void _clearStates()
     }
 }
 
-void _handleEvents(const SDL_Event& e)
+void _handleEvents(const SDL_Event& sdle, event::knEvent& e)
 {
-    switch (e.type)
+    switch (sdle.type)
     {
     case SDL_EVENT_GAMEPAD_ADDED:
     {
-        SDL_Gamepad* pad = SDL_OpenGamepad(e.gdevice.which);
+        SDL_Gamepad* pad = SDL_OpenGamepad(sdle.gdevice.which);
         if (pad)
         {
             SDL_JoystickID id = SDL_GetGamepadID(pad);
 
             for (int i = 0; i < MAX_GAMEPADS; ++i)
             {
-                if (!gamepadSlots.at(i).has_value())
+                if (!_gamepadSlots.at(i).has_value())
                 {
-                    gamepadSlots[i] = id;
+                    _gamepadSlots[i] = id;
                     _connectedPads[id].pad = pad;
                     break;
                 }
@@ -199,11 +200,11 @@ void _handleEvents(const SDL_Event& e)
     }
     case SDL_EVENT_GAMEPAD_REMOVED:
     {
-        SDL_JoystickID id = e.gdevice.which;
+        SDL_JoystickID id = sdle.gdevice.which;
         SDL_CloseGamepad(_connectedPads.at(id).pad);
         _connectedPads.erase(id);
 
-        for (auto& slot : gamepadSlots)
+        for (auto& slot : _gamepadSlots)
         {
             if (slot.has_value() && slot.value() == id)
             {
@@ -216,15 +217,15 @@ void _handleEvents(const SDL_Event& e)
     case SDL_EVENT_GAMEPAD_BUTTON_DOWN:
     case SDL_EVENT_GAMEPAD_BUTTON_UP:
     {
-        SDL_JoystickID id = e.gbutton.which;
+        SDL_JoystickID id = sdle.gbutton.which;
         if (_connectedPads.find(id) == _connectedPads.end())
             return;
 
         GamepadState& state = _connectedPads.at(id);
-        auto button = static_cast<SDL_GamepadButton>(e.gbutton.button);
+        auto button = static_cast<SDL_GamepadButton>(sdle.gbutton.button);
 
-        bool cond = (e.type == SDL_EVENT_GAMEPAD_BUTTON_DOWN);
-        if (e.type == SDL_EVENT_GAMEPAD_BUTTON_DOWN)
+        bool cond = (sdle.type == SDL_EVENT_GAMEPAD_BUTTON_DOWN);
+        if (sdle.type == SDL_EVENT_GAMEPAD_BUTTON_DOWN)
             state.justPressed[button] = true;
         else
             state.justReleased[button] = true;
@@ -241,9 +242,9 @@ bool verifySlot(int slot)
         throw std::out_of_range("Gamepad slot out of range");
         return false;
     }
-    if (!gamepadSlots.at(slot).has_value())
-    {
+
+    if (!_gamepadSlots.at(slot).has_value())
         return false; // No gamepad connected in this slot
-    }
+
     return true;
 }

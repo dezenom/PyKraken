@@ -1,5 +1,6 @@
 #include "Event.hpp"
 #include "Gamepad.hpp"
+#include "Key.hpp"
 #include "Window.hpp"
 #include "_globals.hpp"
 
@@ -11,27 +12,22 @@ namespace event
 
 void _bind(py::module_& module)
 {
-    auto subEvent = module.def_submodule("event", "Event related functions");
-    subEvent.def("poll", &poll, "Get user input events");
-
-    py::class_<knEvent>(subEvent, "Event")
+    py::class_<knEvent>(module, "Event")
         .def_readonly("type", &knEvent::type)
         .def("__getattr__", &knEvent::getAttr);
-    module.attr("Event") = subEvent.attr("Event");
+
+    auto subEvent = module.def_submodule("event", "Event related functions");
+
+    subEvent.def("poll", &poll, "Get user input events");
 }
 
 std::vector<knEvent> poll()
 {
     gamepad::_clearStates();
+    key::_clearStates();
 
     std::vector<knEvent> events;
     SDL_Event event;
-
-    // Reset keyboard pressed/released maps
-    std::fill(std::begin(g_scancodePressed), std::end(g_scancodePressed), false);
-    std::fill(std::begin(g_scancodeReleased), std::end(g_scancodeReleased), false);
-    g_keycodePressed.clear();
-    g_keycodeReleased.clear();
 
     // Reset mouse pressed/released maps
     std::fill(std::begin(g_mousePressed), std::end(g_mousePressed), false);
@@ -41,28 +37,13 @@ std::vector<knEvent> poll()
     {
         knEvent e(event.type);
 
-        gamepad::_handleEvents(event);
+        gamepad::_handleEvents(event, e);
+        key::_handleEvents(event, e);
 
         switch (event.type)
         {
         case SDL_EVENT_QUIT:
             window::close();
-            break;
-
-        case SDL_EVENT_KEY_DOWN:
-        case SDL_EVENT_KEY_UP:
-            if (event.type == SDL_EVENT_KEY_DOWN && !event.key.repeat)
-            {
-                g_scancodePressed[event.key.scancode] = true;
-                g_keycodePressed[event.key.key] = true;
-            }
-            else if (event.type == SDL_EVENT_KEY_UP)
-            {
-                g_scancodeReleased[event.key.scancode] = true;
-                g_keycodeReleased[event.key.key] = true;
-            }
-            e.data["key"] = py::cast(static_cast<KnKeycode>(event.key.key));
-            e.data["scan"] = py::cast(event.key.scancode);
             break;
 
         case SDL_EVENT_MOUSE_BUTTON_DOWN:

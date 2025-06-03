@@ -11,6 +11,11 @@ namespace math
 class Vec2;
 }
 
+namespace event
+{
+struct knEvent;
+}
+
 struct GamepadState
 {
     SDL_Gamepad* pad = nullptr;
@@ -45,5 +50,5 @@ std::vector<int> getConnectedSlots();
 
 void _clearStates();
 
-void _handleEvents(const SDL_Event& e);
+void _handleEvents(const SDL_Event& sdle, event::knEvent& e);
 } // namespace gamepad
