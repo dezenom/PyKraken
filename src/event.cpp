@@ -1,6 +1,7 @@
 #include "Event.hpp"
 #include "Gamepad.hpp"
 #include "Key.hpp"
+#include "Mouse.hpp"
 #include "Window.hpp"
 #include "_globals.hpp"
 
@@ -25,13 +26,10 @@ std::vector<knEvent> poll()
 {
     gamepad::_clearStates();
     key::_clearStates();
+    mouse::_clearStates();
 
     std::vector<knEvent> events;
     SDL_Event event;
-
-    // Reset mouse pressed/released maps
-    std::fill(std::begin(g_mousePressed), std::end(g_mousePressed), false);
-    std::fill(std::begin(g_mouseReleased), std::end(g_mouseReleased), false);
 
     while (SDL_PollEvent(&event))
     {
@@ -39,22 +37,13 @@ std::vector<knEvent> poll()
 
         gamepad::_handleEvents(event, e);
         key::_handleEvents(event, e);
+        mouse::_handleEvents(event, e);
 
         switch (event.type)
         {
         case SDL_EVENT_QUIT:
             window::close();
             break;
-
-        case SDL_EVENT_MOUSE_BUTTON_DOWN:
-        case SDL_EVENT_MOUSE_BUTTON_UP:
-            if (event.type == SDL_EVENT_MOUSE_BUTTON_DOWN)
-                g_mousePressed[event.button.button - 1] = true;
-            else if (event.type == SDL_EVENT_MOUSE_BUTTON_UP)
-                g_mouseReleased[event.button.button - 1] = true;
-            e.data["button"] = py::cast(static_cast<knMouseButton>(event.button.button));
-            break;
-
         default:
             break;
         }

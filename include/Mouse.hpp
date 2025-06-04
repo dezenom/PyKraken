@@ -1,4 +1,6 @@
 #pragma once
+
+#include <SDL3/SDL.h>
 #include <pybind11/pybind11.h>
 
 namespace py = pybind11;
@@ -8,6 +10,11 @@ enum class knMouseButton : uint8_t;
 namespace math
 {
 class Vec2;
+}
+
+namespace event
+{
+struct knEvent;
 }
 
 namespace mouse
@@ -35,4 +42,8 @@ void hide();
 void show();
 
 bool isHidden();
-}
+
+void _clearStates();
+
+void _handleEvents(const SDL_Event& sdle, event::knEvent& e);
+} // namespace mouse

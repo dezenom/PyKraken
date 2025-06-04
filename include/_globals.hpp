@@ -3,11 +3,6 @@
 #include <SDL3/SDL.h>
 #include <unordered_map>
 
-// Mouse buttons
-constexpr size_t MOUSE_BUTTON_COUNT = 5;
-extern bool g_mousePressed[MOUSE_BUTTON_COUNT];
-extern bool g_mouseReleased[MOUSE_BUTTON_COUNT];
-
 enum class knMouseButton : uint8_t
 {
     M_LEFT = SDL_BUTTON_LEFT,

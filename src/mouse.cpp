@@ -1,9 +1,14 @@
 #include "Mouse.hpp"
+#include "Event.hpp"
 #include "Math.hpp"
 #include "Window.hpp"
 #include "_globals.hpp"
 
 #include <iostream>
+
+constexpr size_t MOUSE_BUTTON_COUNT = 5;
+static bool _mousePressed[MOUSE_BUTTON_COUNT];
+static bool _mouseReleased[MOUSE_BUTTON_COUNT];
 
 namespace mouse
 {
@@ -94,11 +99,11 @@ bool isPressed(knMouseButton button)
     return SDL_GetMouseState(nullptr, nullptr) & static_cast<uint32_t>(button);
 }
 
-bool isJustPressed(knMouseButton button) { return g_mousePressed[static_cast<size_t>(button) - 1]; }
+bool isJustPressed(knMouseButton button) { return _mousePressed[static_cast<size_t>(button) - 1]; }
 
 bool isJustReleased(knMouseButton button)
 {
-    return g_mouseReleased[static_cast<size_t>(button) - 1];
+    return _mouseReleased[static_cast<size_t>(button) - 1];
 }
 
 void lock() { SDL_SetWindowRelativeMouseMode(window::getWindow(), true); }
@@ -113,4 +118,24 @@ void show() { SDL_ShowCursor(); }
 
 bool isHidden() { return !SDL_CursorVisible(); }
 
+void _clearStates()
+{
+    std::fill(std::begin(_mousePressed), std::end(_mousePressed), false);
+    std::fill(std::begin(_mouseReleased), std::end(_mouseReleased), false);
+}
+
+void _handleEvents(const SDL_Event& sdle, event::knEvent& e)
+{
+    switch (sdle.type)
+    {
+    case SDL_EVENT_MOUSE_BUTTON_DOWN:
+    case SDL_EVENT_MOUSE_BUTTON_UP:
+        if (sdle.type == SDL_EVENT_MOUSE_BUTTON_DOWN)
+            _mousePressed[sdle.button.button - 1] = true;
+        else if (sdle.type == SDL_EVENT_MOUSE_BUTTON_UP)
+            _mouseReleased[sdle.button.button - 1] = true;
+        e.data["button"] = py::cast(static_cast<knMouseButton>(sdle.button.button));
+        break;
+    }
+}
 } // namespace mouse
