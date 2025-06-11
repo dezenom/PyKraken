@@ -79,6 +79,8 @@ class Vec2
 
     double getLength() const;
 
+    double getLengthSquared() const;
+
     double getAngle() const;
 
     void rotate(double rad);
@@ -118,6 +120,8 @@ class Vec2
 
     operator SDL_Point() const;
     operator SDL_FPoint() const;
+
+    operator py::tuple() const;
 };
 
 Vec2 operator*(double lhs, const Vec2& rhs);

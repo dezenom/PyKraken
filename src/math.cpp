@@ -15,7 +15,7 @@ void _bind(py::module_& module)
     py::class_<PolarCoordinate>(module, "PolarCoordinate")
         .def(py::init())
         .def(py::init(
-                 [](py::sequence s)
+                 [](const py::sequence& s)
                  {
                      if (s.size() != 2)
                          throw std::runtime_error("PolarCoordinate expects a 2-element sequence");
@@ -360,6 +360,8 @@ bool Vec2::isZero(double tolerance) const
 
 double Vec2::getLength() const { return std::hypot(x, y); }
 
+double Vec2::getLengthSquared() const { return x * x + y * y; }
+
 double Vec2::getAngle() const { return std::atan2(y, x); }
 
 void Vec2::rotate(const double rad)
@@ -463,4 +465,6 @@ bool Vec2::operator>=(const Vec2& other) const { return !(*this < other); }
 
 Vec2::operator SDL_Point() const { return {static_cast<int>(x), static_cast<int>(y)}; }
 Vec2::operator SDL_FPoint() const { return {static_cast<float>(x), static_cast<float>(y)}; }
+
+Vec2::operator py::tuple() const { return py::make_tuple(x, y); }
 } // namespace math

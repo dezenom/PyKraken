@@ -15,6 +15,7 @@ pybind11_add_module(_core MODULE
   src/gfx/SDL3_gfxPrimitives.cpp
   src/gfx/SDL3_rotozoom.cpp
   src/camera.cpp
+  src/circle.cpp
   src/color.cpp
   src/constants.cpp
   src/core.cpp
@@ -24,6 +25,7 @@ pybind11_add_module(_core MODULE
   src/gamepad.cpp
   src/input.cpp
   src/key.cpp
+  src/line.cpp
   src/math.cpp
   src/mouse.cpp
   src/rect.cpp

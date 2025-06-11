@@ -16,6 +16,7 @@ namespace rect
 {
 void _bind(py::module_& module);
 
+Rect move(const Rect& rect, const math::Vec2& offset);
 Rect clamp(const Rect& rect, const math::Vec2& min, const math::Vec2& max);
 Rect clamp(const Rect& rect, const Rect& other);
 Rect scaleBy(const Rect& rect, double factor);

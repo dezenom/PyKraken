@@ -5,11 +5,11 @@
 
 namespace py = pybind11;
 
-extern math::Vec2 cameraPos;
-
 namespace camera
 {
 void _bind(py::module_& module);
+
+math::Vec2 getActivePos();
 
 class Camera
 {

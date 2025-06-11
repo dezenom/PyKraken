@@ -1,4 +1,5 @@
 #include "Camera.hpp"
+#include "Circle.hpp"
 #include "Color.hpp"
 #include "Constants.hpp"
 #include "Draw.hpp"
@@ -7,6 +8,7 @@
 #include "Gamepad.hpp"
 #include "Input.hpp"
 #include "Key.hpp"
+#include "Line.hpp"
 #include "Math.hpp"
 #include "Mouse.hpp"
 #include "Rect.hpp"
@@ -22,6 +24,7 @@ PYBIND11_MODULE(_core, m)
     m.def("quit", &quit, "Quit Kraken Engine");
 
     camera::_bind(m);
+    circle::_bind(m);
     color::_bind(m);
     constants::_bind(m);
     draw::_bind(m);
@@ -30,6 +33,7 @@ PYBIND11_MODULE(_core, m)
     gamepad::_bind(m);
     input::_bind(m);
     key::_bind(m);
+    line::_bind(m);
     math::_bind(m);
     mouse::_bind(m);
     rect::_bind(m);

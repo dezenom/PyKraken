@@ -1,6 +1,6 @@
 #include "Camera.hpp"
 
-math::Vec2 cameraPos;
+static math::Vec2 _cameraPos;
 
 namespace camera
 {
@@ -60,14 +60,10 @@ void _bind(py::module_& module)
                 {
                     const auto posSeq = py::cast<py::sequence>(setterObj);
                     if (posSeq.size() == 2)
-                    {
                         self.setPos({posSeq[0].cast<double>(), posSeq[1].cast<double>()});
-                    }
                     else
-                    {
                         throw std::invalid_argument(
                             "Position sequence must have exactly two elements.");
-                    }
                 }
                 else
                 {
@@ -89,6 +85,8 @@ void _bind(py::module_& module)
         )doc");
 }
 
+math::Vec2 getActivePos() { return _cameraPos; }
+
 Camera* Camera::active = nullptr;
 
 Camera::Camera(const math::Vec2& pos) : pos(pos) {}
@@ -97,7 +95,7 @@ void Camera::setPos(const math::Vec2& pos)
 {
     this->pos = pos;
     if (Camera::active == this)
-        cameraPos = pos;
+        _cameraPos = pos;
 }
 
 math::Vec2 Camera::getPos() const { return pos; }
@@ -105,6 +103,6 @@ math::Vec2 Camera::getPos() const { return pos; }
 void Camera::set()
 {
     Camera::active = this;
-    cameraPos = pos;
+    _cameraPos = pos;
 }
 } // namespace camera

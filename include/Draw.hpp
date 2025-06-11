@@ -17,11 +17,13 @@ void _bind(pybind11::module_& module);
 
 void rect(const Rect& rect, const Color& color, int thickness = 0);
 
-void line(const math::Vec2& start, const math::Vec2& end, const Color& color, int thickness = 1);
+void lineThin(math::Vec2 start, math::Vec2 end, const Color& color);
 
-void point(const math::Vec2& point, const Color& color);
+void line(math::Vec2 start, math::Vec2 end, const Color& color, int thickness);
 
-void circleThin(const math::Vec2& center, int radius, const Color& color);
+void point(math::Vec2 point, const Color& color);
 
-void circle(const math::Vec2& center, int radius, const Color& color, int thickness);
+void circleThin(math::Vec2 center, int radius, const Color& color);
+
+void circle(math::Vec2 center, int radius, const Color& color, int thickness);
 } // namespace draw

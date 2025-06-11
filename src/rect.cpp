@@ -4,16 +4,25 @@
 #define VEC2_PROPERTY(name, getter, setter)                                                        \
     .def_property(                                                                                 \
         name,                                                                                      \
-        [](const Rect& r)                                                                          \
+        [](const Rect& self)                                                                       \
         {                                                                                          \
-            const math::Vec2 pos = r.getter();                                                     \
+            const math::Vec2 pos = self.getter();                                                  \
             return py::make_tuple(pos.x, pos.y);                                                   \
         },                                                                                         \
-        [](Rect& r, py::sequence s)                                                                \
+        [](Rect& self, const py::object& posObj)                                                   \
         {                                                                                          \
-            if (s.size() != 2)                                                                     \
-                throw std::runtime_error(std::string(name) + " must be a 2-element sequence");     \
-            r.setter(math::Vec2(s[0].cast<double>(), s[1].cast<double>()));                        \
+            math::Vec2 posVec;                                                                     \
+            if (py::isinstance<math::Vec2>(posObj))                                                \
+                posVec = posObj.cast<math::Vec2>();                                                \
+            else if (py::isinstance<py::sequence>(posObj))                                         \
+            {                                                                                      \
+                const auto posSeq = posObj.cast<py::sequence>();                                   \
+                if (posSeq.size() != 2)                                                            \
+                    throw std::runtime_error(std::string(name) + " must be a 2-element sequence"); \
+                posVec.x = posSeq[0].cast<double>();                                               \
+                posVec.y = posSeq[1].cast<double>();                                               \
+            }                                                                                      \
+            self.setter(posVec);                                                                   \
         })
 
 namespace rect
@@ -148,6 +157,25 @@ void _bind(py::module_& module)
 
     auto subRect = module.def_submodule("rect", "Rectangle related functions");
 
+    subRect.def("move",
+                [](const Rect& rect, const py::object& offsetObj)
+                {
+                    math::Vec2 offsetVec;
+                    if (py::isinstance<math::Vec2>(offsetObj))
+                        offsetVec = offsetObj.cast<math::Vec2>();
+                    else if (py::isinstance<py::sequence>(offsetObj))
+                    {
+                        const auto offsetSeq = offsetObj.cast<py::sequence>();
+                        if (offsetSeq.size() != 2)
+                            throw std::invalid_argument("Expected 2-element sequence");
+                        offsetVec.x = offsetSeq[0].cast<double>();
+                        offsetVec.y = offsetSeq[1].cast<double>();
+                    }
+                    else
+                        throw std::invalid_argument("Expected Vec2 or 2-element sequence");
+
+                    return move(rect, offsetVec);
+                });
     subRect.def("clamp",
                 [](const Rect& rect, const py::sequence& min, const py::sequence& max) -> Rect
                 {
@@ -171,6 +199,14 @@ void _bind(py::module_& module)
                 });
     subRect.def("scale_by", py::overload_cast<const Rect&, const math::Vec2&>(&rect::scaleBy));
     subRect.def("scale_to", &rect::scaleTo);
+}
+
+Rect move(const Rect& rect, const math::Vec2& offset)
+{
+    Rect newRect = rect;
+    newRect.x += offset.x;
+    newRect.y += offset.y;
+    return newRect;
 }
 
 Rect clamp(const Rect& rect, const math::Vec2& min, const math::Vec2& max)
@@ -238,8 +274,8 @@ void Rect::inflate(const math::Vec2& offset)
 {
     x -= offset.x / 2.0;
     y -= offset.y / 2.0;
-    w += offset.x;
-    h += offset.x;
+    w = std::max(0.0, w + offset.x);
+    h = std::max(0.0, h + offset.y);
 }
 
 void Rect::fit(const Rect& other)
@@ -363,7 +399,7 @@ void Rect::setBottom(const double y) { this->y = y - h; }
 void Rect::setTopLeft(const math::Vec2& pos)
 {
     x = pos.x;
-    y = pos.x;
+    y = pos.y;
 }
 void Rect::setTopMid(const math::Vec2& pos)
 {

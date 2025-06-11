@@ -1,5 +1,8 @@
 #include "Draw.hpp"
+#include "Camera.hpp"
+#include "Circle.hpp"
 #include "Color.hpp"
+#include "Line.hpp"
 #include "Math.hpp"
 #include "Rect.hpp"
 #include "Window.hpp"
@@ -72,6 +75,9 @@ void _bind(pybind11::module_& module)
         "line",
         [](const py::object& start, const py::object& end, const py::object& color, int thickness)
         {
+            if (thickness <= 0)
+                return;
+
             math::Vec2 s, e;
             Color c;
 
@@ -109,7 +115,42 @@ void _bind(pybind11::module_& module)
                 throw std::invalid_argument(
                     "Color must be a Color or a sequence of 3 or 4 integers");
 
-            line(s, e, c, thickness);
+            if (thickness == 1)
+                lineThin(s, e, c);
+            else
+                line(s, e, c, thickness);
+        },
+        py::arg("start"), py::arg("end"), py::arg("color"), py::arg("thickness") = 1);
+
+    subDraw.def(
+        "line",
+        [](const Line& lineObj, const py::object& color, int thickness)
+        {
+            if (thickness <= 0)
+                return;
+
+            Color c;
+
+            // Parse color
+            if (py::isinstance<Color>(color))
+                c = color.cast<Color>();
+            else if (py::isinstance<py::sequence>(color))
+            {
+                auto seq = color.cast<py::sequence>();
+                if (seq.size() != 3 && seq.size() != 4)
+                    throw std::invalid_argument(
+                        "Color must be a sequence of (r, g, b) or (r, g, b, a)");
+                c = {seq[0].cast<uint8_t>(), seq[1].cast<uint8_t>(), seq[2].cast<uint8_t>(),
+                     seq.size() == 4 ? seq[3].cast<uint8_t>() : static_cast<uint8_t>(255)};
+            }
+            else
+                throw std::invalid_argument(
+                    "Color must be a Color or a sequence of 3 or 4 integers");
+
+            if (thickness == 1)
+                lineThin(lineObj.getA(), lineObj.getB(), c);
+            else
+                line(lineObj.getA(), lineObj.getB(), c, thickness);
         },
         py::arg("start"), py::arg("end"), py::arg("color"), py::arg("thickness") = 1);
 
@@ -195,71 +236,196 @@ void _bind(pybind11::module_& module)
             else
                 circle(center, radius, col, thickness);
         },
-        py::arg("center"), py::arg("radius"), py::arg("color"), py::arg("thickness") = 1);
+        py::arg("center"), py::arg("radius"), py::arg("color"), py::arg("thickness") = 0);
+
+    subDraw.def(
+        "circle",
+        [](const Circle& circleObj, const py::object& color, int thickness)
+        {
+            if (circleObj.radius < 1)
+                return;
+
+            Color col;
+
+            // Parse color
+            if (py::isinstance<Color>(color))
+                col = color.cast<Color>();
+            else if (py::isinstance<py::sequence>(color))
+            {
+                auto seq = color.cast<py::sequence>();
+                if (seq.size() != 3 && seq.size() != 4)
+                    throw std::invalid_argument(
+                        "Color must be a sequence of (r, g, b) or (r, g, b, a)");
+                col = {seq[0].cast<uint8_t>(), seq[1].cast<uint8_t>(), seq[2].cast<uint8_t>(),
+                       seq.size() == 4 ? seq[3].cast<uint8_t>() : static_cast<uint8_t>(255)};
+            }
+            else
+                throw std::invalid_argument(
+                    "Color must be a Color or a sequence of 3 or 4 integers");
+
+            if (thickness == 1)
+                circleThin(circleObj.pos, circleObj.radius, col);
+            else
+                circle(circleObj.pos, circleObj.radius, col, thickness);
+        },
+        py::arg("center"), py::arg("radius"), py::arg("color"), py::arg("thickness") = 0);
 }
 
 void rect(const Rect& rect, const Color& color, const int thickness)
 {
-    SDL_Renderer* r = window::getRenderer();
-    if (r == nullptr)
-    {
+    SDL_Renderer* renderer = window::getRenderer();
+    if (renderer == nullptr)
         throw std::runtime_error("Renderer not initialized");
-    }
 
-    SDL_SetRenderDrawColor(r, color.r, color.g, color.b, color.a);
+    SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a);
 
-    const auto halfWidth = static_cast<float>(rect.w / 2.f);
-    const auto halfHeight = static_cast<float>(rect.h / 2.f);
+    Rect screenRect = rect;
+    screenRect.setTopLeft(screenRect.getTopLeft() - camera::getActivePos());
+    SDL_FRect sdlRect = screenRect;
 
+    const auto halfWidth = static_cast<int>(rect.w / 2.0);
+    const auto halfHeight = static_cast<int>(rect.h / 2.0);
     if (thickness <= 0 || thickness > halfWidth || thickness > halfHeight)
     {
-        SDL_FRect frect = rect;
-        SDL_RenderFillRect(window::getRenderer(), &frect);
+        SDL_RenderFillRect(renderer, &sdlRect);
         return;
     }
 
-    for (int i = 0; i < thickness; i++)
+    SDL_RenderRect(renderer, &sdlRect);
+    for (int i = 1; i < thickness; i++)
     {
-        const auto offset = static_cast<float>(i);
-        Rect layer = {rect.x + offset, rect.y + offset, rect.w - offset * 2, rect.h - offset * 2};
-        SDL_FRect sdllayer = layer;
-        SDL_RenderRect(window::getRenderer(), &sdllayer);
+        screenRect.inflate({-2, -2});
+        sdlRect = screenRect;
+        SDL_RenderRect(renderer, &sdlRect);
     }
 }
 
-void line(const math::Vec2& start, const math::Vec2& end, const Color& color, const int thickness)
+void lineThin(math::Vec2 start, math::Vec2 end, const Color& color)
 {
-    if (thickness < 1)
+    SDL_Renderer* renderer = window::getRenderer();
+    if (renderer == nullptr)
+        throw std::runtime_error("Renderer not initialized");
+
+    SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a);
+
+    start -= camera::getActivePos();
+    end -= camera::getActivePos();
+    auto x1 = static_cast<int>(start.x);
+    auto y1 = static_cast<int>(start.y);
+    const auto x2 = static_cast<int>(end.x);
+    const auto y2 = static_cast<int>(end.y);
+
+    if (y1 == y2 || x1 == x2)
+    {
+        SDL_RenderLine(renderer, x1, y1, x2, y2);
         return;
+    }
 
-    SDL_Renderer* r = window::getRenderer();
-    if (r == nullptr)
-        throw std::runtime_error("Renderer not initialized");
+    const int dx = abs(x2 - x1), sx = x1 < x2 ? 1 : -1;
+    const int dy = abs(y2 - y1), sy = y1 < y2 ? 1 : -1;
+    int err = (dx > dy ? dx : -dy) / 2;
 
-    const auto x1 = static_cast<Sint16>(start.x);
-    const auto y1 = static_cast<Sint16>(start.y);
-    const auto x2 = static_cast<Sint16>(end.x);
-    const auto y2 = static_cast<Sint16>(end.y);
+    while (true)
+    {
+        SDL_RenderPoint(renderer, x1, y1);
 
-    thickLineRGBA(r, x1, y1, x2, y2, thickness, color.r, color.g, color.b, color.a);
+        if (x1 == x2 && y1 == y2)
+            break;
+
+        int e2 = err;
+        if (e2 > -dx)
+        {
+            err -= dy;
+            x1 += sx;
+        }
+        if (e2 < dy)
+        {
+            err += dx;
+            y1 += sy;
+        }
+    }
 }
 
-void point(const math::Vec2& point, const Color& color)
+void line(math::Vec2 start, math::Vec2 end, const Color& color, const int thickness)
+{
+    SDL_Renderer* renderer = window::getRenderer();
+    if (renderer == nullptr)
+        throw std::runtime_error("Renderer not initialized");
+
+    SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a);
+
+    start -= camera::getActivePos();
+    end -= camera::getActivePos();
+    auto x1 = static_cast<int>(start.x);
+    auto y1 = static_cast<int>(start.y);
+    const auto x2 = static_cast<int>(end.x);
+    const auto y2 = static_cast<int>(end.y);
+
+    const int extraWidth = 1 - (thickness % 2);
+    const int halfWidth = thickness / 2;
+
+    if (y1 == y2)
+    {
+        for (int i = -halfWidth + extraWidth; i <= halfWidth; i++)
+            SDL_RenderLine(renderer, x1, y1 + i, x2, y2 + i);
+        return;
+    }
+
+    if (x1 == x2)
+    {
+        for (int i = -halfWidth + extraWidth; i <= halfWidth; i++)
+            SDL_RenderLine(renderer, x1 + i, y1, x2 + i, y2);
+        return;
+    }
+
+    const int dx = abs(x2 - x1), sx = x1 < x2 ? 1 : -1;
+    const int dy = abs(y2 - y1), sy = y1 < y2 ? 1 : -1;
+    int err = (dx > dy ? dx : -dy) / 2;
+    const bool xinc = (dx <= dy); // Direction of thickness
+
+    while (true)
+    {
+        if (xinc)
+            // Thickness is horizontal, draw horizontal segment
+            for (int i = -halfWidth + extraWidth; i <= halfWidth; i++)
+                SDL_RenderPoint(renderer, x1 + i, y1);
+        else
+            // Thickness is vertical, draw vertical segment
+            for (int i = -halfWidth + extraWidth; i <= halfWidth; i++)
+                SDL_RenderPoint(renderer, x1, y1 + i);
+
+        if (x1 == x2 && y1 == y2)
+            break;
+
+        const int e2 = err;
+        if (e2 > -dx)
+        {
+            err -= dy;
+            x1 += sx;
+        }
+        if (e2 < dy)
+        {
+            err += dx;
+            y1 += sy;
+        }
+    }
+}
+
+void point(math::Vec2 point, const Color& color)
 {
     SDL_Renderer* r = window::getRenderer();
     if (r == nullptr)
-    {
         throw std::runtime_error("Renderer not initialized");
-    }
 
     SDL_SetRenderDrawColor(r, color.r, color.g, color.b, color.a);
 
+    point -= camera::getActivePos();
     const auto px = static_cast<float>(point.x);
     const auto py = static_cast<float>(point.y);
     SDL_RenderPoint(r, px, py);
 }
 
-void circleThin(const math::Vec2& center, const int radius, const Color& color)
+void circleThin(math::Vec2 center, const int radius, const Color& color)
 {
     SDL_Renderer* renderer = window::getRenderer();
     if (!renderer)
@@ -275,8 +441,8 @@ void circleThin(const math::Vec2& center, const int radius, const Color& color)
 
     std::set<Uint64> pointSet;
 
-    auto emit = [&](int dx, int dy)
-    { pointSet.insert(packPoint(int(center.x + dx), int(center.y + dy))); };
+    center -= camera::getActivePos();
+    auto emit = [&](int dx, int dy) { pointSet.insert(packPoint(center.x + dx, center.y + dy)); };
 
     while (x <= y)
     {
@@ -313,7 +479,7 @@ void circleThin(const math::Vec2& center, const int radius, const Color& color)
     SDL_RenderPoints(renderer, points.data(), static_cast<int>(points.size()));
 }
 
-void circle(const math::Vec2& center, int radius, const Color& color, int thickness)
+void circle(math::Vec2 center, int radius, const Color& color, int thickness)
 {
     SDL_Renderer* renderer = window::getRenderer();
     if (!renderer)
@@ -322,6 +488,7 @@ void circle(const math::Vec2& center, int radius, const Color& color, int thickn
     SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a);
 
     const int innerRadius = (thickness <= 0 || thickness >= radius) ? -1 : radius - thickness;
+    center -= camera::getActivePos();
 
     auto hline = [&](int x1, int y, int x2)
     {

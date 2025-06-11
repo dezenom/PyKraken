@@ -4,8 +4,6 @@
 #include "Window.hpp"
 #include "_globals.hpp"
 
-#include <iostream>
-
 constexpr size_t MOUSE_BUTTON_COUNT = 5;
 static bool _mousePressed[MOUSE_BUTTON_COUNT];
 static bool _mouseReleased[MOUSE_BUTTON_COUNT];
