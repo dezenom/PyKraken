@@ -16,6 +16,10 @@ struct Color
 
     operator SDL_Color() const { return {r, g, b, a}; }
     operator SDL_FColor() const { return {r / 255.f, g / 255.f, b / 255.f, a / 255.f}; }
+
+    std::string toHex() const;
+
+    void fromHex(std::string_view hex);
 };
 
 namespace color
@@ -23,6 +27,8 @@ namespace color
 void _bind(py::module_& module);
 
 Color fromHex(std::string_view hex);
+
+std::string toHex(Color color);
 
 Color fromHSV(float h, float s, float v, float a = 1.0f);
 

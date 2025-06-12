@@ -10,6 +10,7 @@ set(CMAKE_CXX_STANDARD 17)
 set(PYBIND11_FINDPYTHON ON)
 find_package(pybind11 CONFIG REQUIRED) # PyBind11
 find_package(SDL3 REQUIRED) # SDL3 core
+find_package(SDL3_image REQUIRED) # SDL3 image
 
 pybind11_add_module(_core MODULE
   src/gfx/SDL3_gfxPrimitives.cpp
@@ -33,10 +34,11 @@ pybind11_add_module(_core MODULE
   src/window.cpp
   WITH_SOABI
 )
-target_link_libraries(_core PRIVATE pybind11::headers SDL3::SDL3)
+target_link_libraries(_core PRIVATE pybind11::headers SDL3::SDL3 SDL3_image::SDL3_image)
 
 target_include_directories(_core PRIVATE
   ${SDL3_INCLUDE_DIRS}
+  ${SDL3_image_INCLUDE_DIRS}
   ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 

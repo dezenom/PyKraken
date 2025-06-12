@@ -78,7 +78,7 @@ void _bind(py::module_& module)
 
                  if (py::isinstance<math::Vec2>(pointObj))
                      point = pointObj.cast<math::Vec2>();
-                 else if (py::isinstance<py::sequence>)
+                 else if (py::isinstance<py::sequence>(pointObj))
                  {
                      const auto pointSeq = pointObj.cast<py::sequence>();
                      if (pointSeq.size() != 2)

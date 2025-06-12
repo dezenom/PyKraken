@@ -1,5 +1,6 @@
 #include "Color.hpp"
 
+#include <iomanip>
 #include <sstream>
 
 namespace color
@@ -10,7 +11,30 @@ void _bind(py::module_& module)
         .def(py::init())
         .def(py::init<uint8_t, uint8_t, uint8_t, uint8_t>(), py::arg("r"), py::arg("g"),
              py::arg("b"), py::arg("a") = 255)
-        .def(py::init([](const std::string& hex) { return fromHex(hex); }), py::arg("hex"))
+        .def(py::init(
+            [](const py::object& objparam)
+            {
+                if (py::isinstance<Color>(objparam))
+                    return objparam.cast<Color>();
+
+                if (py::isinstance<py::str>(objparam))
+                    return fromHex(objparam.cast<std::string>());
+
+                if (py::isinstance<py::sequence>(objparam))
+                {
+                    auto seq = objparam.cast<py::sequence>();
+                    if (seq.size() == 3 || seq.size() == 4)
+                    {
+                        Color c = {seq[0].cast<uint8_t>(), seq[1].cast<uint8_t>(),
+                                   seq[2].cast<uint8_t>()};
+                        c.a = seq.size() == 4 ? seq[3].cast<uint8_t>() : 255;
+                        return c;
+                    }
+                }
+
+                throw std::invalid_argument(
+                    "Argument must be an instance of 'Color' or a sequence of 3-4 integers");
+            }))
         .def("__str__",
              [](const Color& c)
              {
@@ -44,18 +68,40 @@ void _bind(py::module_& module)
         .def_readwrite("r", &Color::r)
         .def_readwrite("g", &Color::g)
         .def_readwrite("b", &Color::b)
-        .def_readwrite("a", &Color::a);
+        .def_readwrite("a", &Color::a)
+        .def_property("hex", &Color::toHex, &Color::fromHex);
 
     auto subColor = module.def_submodule("color", "Color related functions");
 
-    subColor
-        .def("from_hex", &fromHex, py::arg("hex"),
-             "Create a Color from a hex string (e.g. '#FF5733' or 'FF5733').")
-        .def("from_hsv", &fromHSV, py::arg("h"), py::arg("s"), py::arg("v"), py::arg("a") = 1.0f,
-             "Create a Color from HSV values.")
-        .def("lerp", &lerp, py::arg("a"), py::arg("b"), py::arg("t") = 0.5,
-             "Linearly interpolate between two Colors.")
-        .def("invert", &invert, py::arg("color"), "Invert the given Color.");
+    subColor.def("from_hex", &fromHex, py::arg("hex"), "Create a Color from a hex string.");
+    subColor.def(
+        "to_hex",
+        [](const py::object& colorObj)
+        {
+            if (py::isinstance<Color>(colorObj))
+                return toHex(colorObj.cast<Color>());
+
+            if (py::isinstance<py::sequence>(colorObj))
+            {
+                auto seq = colorObj.cast<py::sequence>();
+                if (seq.size() == 3 || seq.size() == 4)
+                {
+                    Color c = {seq[0].cast<uint8_t>(), seq[1].cast<uint8_t>(),
+                               seq[2].cast<uint8_t>()};
+                    c.a = seq.size() == 4 ? seq[3].cast<uint8_t>() : 255;
+                    return toHex(c);
+                }
+            }
+
+            throw std::invalid_argument(
+                "Argument must be an instance of 'Color' or a sequence of 3-4 integers");
+        },
+        py::arg("color"), "Convert a Color to a hex string.");
+    subColor.def("from_hsv", &fromHSV, py::arg("h"), py::arg("s"), py::arg("v"),
+                 py::arg("a") = 1.0f, "Create a Color from HSV values.");
+    subColor.def("lerp", &lerp, py::arg("a"), py::arg("b"), py::arg("t") = 0.5,
+                 "Linearly interpolate between two Colors.");
+    subColor.def("invert", &invert, py::arg("color"), "Invert the given Color.");
 
     // Predefined colors
     subColor.attr("BLACK") = BLACK;
@@ -128,6 +174,17 @@ Color fromHex(std::string_view hex)
     return {0, 0, 0, 255};
 }
 
+std::string toHex(Color color)
+{
+    std::stringstream ss;
+
+    ss << std::hex << std::uppercase << std::setfill('0') << std::setw(2)
+       << static_cast<int>(color.r) << std::setw(2) << static_cast<int>(color.g) << std::setw(2)
+       << static_cast<int>(color.b) << std::setw(2) << static_cast<int>(color.a);
+
+    return "#" + ss.str();
+}
+
 Color fromHSV(const float h, const float s, const float v, const float a)
 {
     const float c = v * s;
@@ -190,3 +247,62 @@ Color invert(const Color& color)
             static_cast<uint8_t>(255 - color.b), color.a};
 }
 } // namespace color
+
+void Color::fromHex(std::string_view hex)
+{
+    if (hex.empty())
+        return;
+
+    if (hex[0] == '#')
+        hex.remove_prefix(1);
+
+    auto hexToByte = [](std::string_view str) -> uint8_t
+    {
+        uint32_t byte;
+        std::stringstream ss;
+        ss << std::hex << str;
+        ss >> byte;
+        return static_cast<uint8_t>(byte);
+    };
+
+    if (hex.length() == 6)
+    {
+        // RRGGBB
+        r = hexToByte(hex.substr(0, 2));
+        g = hexToByte(hex.substr(2, 2));
+        b = hexToByte(hex.substr(4, 2));
+    }
+    else if (hex.length() == 8)
+    {
+        // RRGGBBAA
+        r = hexToByte(hex.substr(0, 2));
+        g = hexToByte(hex.substr(2, 2));
+        b = hexToByte(hex.substr(4, 2));
+        a = hexToByte(hex.substr(6, 2));
+    }
+    else if (hex.length() == 3)
+    {
+        // RGB → duplicate each
+        r = hexToByte(std::string(2, hex[0]));
+        g = hexToByte(std::string(2, hex[1]));
+        b = hexToByte(std::string(2, hex[2]));
+    }
+    else if (hex.length() == 4)
+    {
+        // RGBA → duplicate each
+        r = hexToByte(std::string(2, hex[0]));
+        g = hexToByte(std::string(2, hex[1]));
+        b = hexToByte(std::string(2, hex[2]));
+        a = hexToByte(std::string(2, hex[3]));
+    }
+}
+
+std::string Color::toHex() const
+{
+    std::stringstream ss;
+
+    ss << std::hex << std::uppercase << std::setfill('0') << std::setw(2) << r << std::setw(2) << g
+       << std::setw(2) << b << std::setw(2) << a;
+
+    return "#" + ss.str();
+}

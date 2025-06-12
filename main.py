@@ -62,8 +62,6 @@ while kn.window.is_open():
     player_A.update(delta)
     # playerB.update(delta)
     
-    print(kn.mouse.get_pos())
-    
     kn.window.flip()
 
 kn.quit()

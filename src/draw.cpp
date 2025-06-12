@@ -124,7 +124,7 @@ void _bind(pybind11::module_& module)
 
     subDraw.def(
         "line",
-        [](const Line& lineObj, const py::object& color, int thickness)
+        [](const Line& lineObj, const py::object& color, const int thickness)
         {
             if (thickness <= 0)
                 return;
@@ -152,7 +152,7 @@ void _bind(pybind11::module_& module)
             else
                 line(lineObj.getA(), lineObj.getB(), c, thickness);
         },
-        py::arg("start"), py::arg("end"), py::arg("color"), py::arg("thickness") = 1);
+        py::arg("line"), py::arg("color"), py::arg("thickness") = 1);
 
     subDraw.def(
         "point",
@@ -268,7 +268,7 @@ void _bind(pybind11::module_& module)
             else
                 circle(circleObj.pos, circleObj.radius, col, thickness);
         },
-        py::arg("center"), py::arg("radius"), py::arg("color"), py::arg("thickness") = 0);
+        py::arg("circle"), py::arg("color"), py::arg("thickness") = 0);
 }
 
 void rect(const Rect& rect, const Color& color, const int thickness)

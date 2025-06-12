@@ -203,7 +203,7 @@ void _bind(py::module_& module)
                     else
                         throw std::invalid_argument("Expected a Vec2 or 2-element sequence");
 
-                    move(line, offsetObj);
+                    move(line, offsetVec);
                 });
 }
 
