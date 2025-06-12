@@ -31,9 +31,9 @@ jobs:
         run: |
           $SDL_image_VERSION = "3.2.4"
           Invoke-WebRequest -Uri "https://github.com/libsdl-org/SDL_image/releases/download/release-$SDL_image_VERSION/SDL3_image-devel-$SDL_image_VERSION-VC.zip" -OutFile "sdl3-image.zip"
-          Expand-Archive -Path "sdl3-image.zip" -DestinationPath "sdl3-image"
-          Copy-Item "sdl3-image/SDL3_image-$SDL_image_VERSION/lib/x64/SDL3_image.dll" -Destination "src/pykraken/"
-          echo "SDL3_image_CMAKE_PATH=${PWD}/sdl3-image/SDL3_image-$SDL_image_VERSION/cmake" | Out-File -FilePath $env:GITHUB_ENV -Append
+          Expand-Archive -Path "sdl3-image.zip" -DestinationPath "sdl3"
+          Copy-Item "sdl3/SDL3_image-$SDL_image_VERSION/lib/x64/SDL3_image.dll" -Destination "src/pykraken/"
+          echo "SDL3_image_CMAKE_PATH=${PWD}/sdl3/SDL3_image-$SDL_image_VERSION/cmake" | Out-File -FilePath $env:GITHUB_ENV -Append
         shell: powershell
 
       - name: Build wheels with cibuildwheel
