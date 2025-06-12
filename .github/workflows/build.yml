@@ -27,11 +27,21 @@ jobs:
           echo "SDL3_CMAKE_PATH=${PWD}/sdl3/SDL3-$SDL_VERSION/cmake" | Out-File -FilePath $env:GITHUB_ENV -Append
         shell: powershell
 
+      - name: Download SDL3_image devel (Windows)
+        run: |
+          $SDL_image_VERSION = "3.2.4"
+          Invoke-WebRequest -Uri "https://github.com/libsdl-org/SDL_image/releases/download/release-$SDL_image_VERSION/SDL3_image-devel-$SDL_image_VERSION-VC.zip" -OutFile "sdl3-image.zip"
+          Expand-Archive -Path "sdl3-image.zip" -DestinationPath "sdl3-image"
+          Copy-Item "sdl3-image/SDL3_image-$SDL_image_VERSION/lib/x64/SDL3_image.dll" -Destination "src/pykraken/"
+          echo "SDL3_image_CMAKE_PATH=${PWD}/sdl3-image/SDL3_image-$SDL_image_VERSION/cmake" | Out-File -FilePath $env:GITHUB_ENV -Append
+        shell: powershell
+
       - name: Build wheels with cibuildwheel
         uses: pypa/cibuildwheel@v2.23.3
         env:
           CIBW_ENVIRONMENT_WINDOWS: >
             SDL3_DIR="${SDL3_CMAKE_PATH}"
+            SDL3_image_DIR="${SDL3_image_CMAKE_PATH}"
           CIBW_SKIP: "pp* cp36* cp37*"
           CIBW_BUILD: "cp310-* cp311-* cp312-* cp313-*"
 
