@@ -14,30 +14,30 @@ void _bind(py::module_& module)
 {
     py::class_<Circle>(module, "Circle")
         .def(py::init())
+        .def(py::init<const math::Vec2&, double>())
         .def(py::init(
-            [](const py::object& centerObj, double radius)
+            [](const py::sequence& prSeq) -> Circle*
             {
-                math::Vec2 center;
+                if (prSeq.size() != 2)
+                    throw std::invalid_argument("Circle expects a 2-element sequence");
 
-                if (py::isinstance<math::Vec2>(centerObj))
-                    center = centerObj.cast<math::Vec2>();
-                else if (py::isinstance<py::sequence>(centerObj))
-                {
-                    const auto centerSeq = centerObj.cast<py::sequence>();
-                    if (centerSeq.size() != 2)
-                        throw std::invalid_argument("2-element sequence expected");
-                    center.x = centerSeq[0].cast<double>();
-                    center.y = centerSeq[1].cast<double>();
-                }
-                else
-                    throw std::invalid_argument("Vec2 or 2-element sequence expected");
+                if (!py::isinstance<py::sequence>(prSeq[0]))
+                    throw std::invalid_argument("Position must be a sequence");
+                if (!py::isinstance<double>(prSeq[1]))
+                    throw std::invalid_argument("Radius must be an int or float");
 
-                return Circle(center, radius);
+                py::sequence posSeq = prSeq[0].cast<py::sequence>();
+                double radius = prSeq[1].cast<double>();
+
+                if (posSeq.size() != 2)
+                    throw std::invalid_argument("Position must be a 2-element sequence");
+
+                return new Circle({posSeq[0].cast<double>(), posSeq[1].cast<double>()}, radius);
             }))
 
         .def(
             "__iter__",
-            [](const Circle& circle)
+            [](const Circle& circle) -> py::iterator
             {
                 static double data[3];
                 data[0] = circle.pos.x;
@@ -47,7 +47,7 @@ void _bind(py::module_& module)
             },
             py::keep_alive<0, 1>())
         .def("__getitem__",
-             [](const Circle& circle, size_t i)
+             [](const Circle& circle, size_t i) -> double
              {
                  switch (i)
                  {
@@ -61,7 +61,7 @@ void _bind(py::module_& module)
                      throw py::index_error("Index out of range");
                  }
              })
-        .def("__len__", [](const Circle&) { return 3; })
+        .def("__len__", [](const Circle&) -> int { return 3; })
         .def("__eq__", &Circle::operator==)
         .def("__ne__", &Circle::operator!=)
 
@@ -72,7 +72,7 @@ void _bind(py::module_& module)
         .def_property_readonly("circumference", &Circle::getCircumference)
 
         .def("collide_point",
-             [](const Circle& self, const py::object& pointObj)
+             [](const Circle& self, const py::object& pointObj) -> bool
              {
                  math::Vec2 point;
 
@@ -95,7 +95,7 @@ void _bind(py::module_& module)
         .def("collide_rect", &Circle::collideRect)
         .def("collide_line", &Circle::collideLine)
         .def("contains",
-             [](const Circle& self, const py::object& shapeObject)
+             [](const Circle& self, const py::object& shapeObject) -> bool
              {
                  if (py::isinstance<math::Vec2>(shapeObject))
                      return self.collidePoint(shapeObject.cast<math::Vec2>());
@@ -108,6 +108,7 @@ void _bind(py::module_& module)
              })
         .def("as_rect", &Circle::asRect)
         .def("copy", &Circle::copy);
+    py::implicitly_convertible<py::sequence, Circle>();
 }
 } // namespace circle
 

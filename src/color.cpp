@@ -12,22 +12,19 @@ void _bind(py::module_& module)
         .def(py::init<uint8_t, uint8_t, uint8_t, uint8_t>(), py::arg("r"), py::arg("g"),
              py::arg("b"), py::arg("a") = 255)
         .def(py::init(
-            [](const py::object& objparam)
+            [](const py::object& objparam) -> Color*
             {
-                if (py::isinstance<Color>(objparam))
-                    return objparam.cast<Color>();
-
                 if (py::isinstance<py::str>(objparam))
-                    return fromHex(objparam.cast<std::string>());
+                    return new Color(fromHex(objparam.cast<std::string>()));
 
                 if (py::isinstance<py::sequence>(objparam))
                 {
                     auto seq = objparam.cast<py::sequence>();
                     if (seq.size() == 3 || seq.size() == 4)
                     {
-                        Color c = {seq[0].cast<uint8_t>(), seq[1].cast<uint8_t>(),
-                                   seq[2].cast<uint8_t>()};
-                        c.a = seq.size() == 4 ? seq[3].cast<uint8_t>() : 255;
+                        auto* c = new Color{seq[0].cast<uint8_t>(), seq[1].cast<uint8_t>(),
+                                            seq[2].cast<uint8_t>()};
+                        c->a = seq.size() == 4 ? seq[3].cast<uint8_t>() : 255;
                         return c;
                     }
                 }
@@ -36,30 +33,30 @@ void _bind(py::module_& module)
                     "Argument must be an instance of 'Color' or a sequence of 3-4 integers");
             }))
         .def("__str__",
-             [](const Color& c)
+             [](const Color& c) -> std::string
              {
                  return "(" + std::to_string(c.r) + ", " + std::to_string(c.g) + ", " +
                         std::to_string(c.b) + ", " + std::to_string(c.a) + ")";
              })
         .def("__repr__",
-             [](const Color& c)
+             [](const Color& c) -> std::string
              {
                  return "Color(" + std::to_string(c.r) + ", " + std::to_string(c.g) + ", " +
                         std::to_string(c.b) + ", " + std::to_string(c.a) + ")";
              })
         .def(
-            "__iter__", [](const Color& c) { return py::make_iterator(&c.r, &c.r + 4); },
-            py::keep_alive<0, 1>())
+            "__iter__", [](const Color& c) -> py::iterator
+            { return py::make_iterator(&c.r, &c.r + 4); }, py::keep_alive<0, 1>())
         .def("__getitem__",
-             [](const Color& c, size_t i)
+             [](const Color& c, size_t i) -> uint8_t
              {
                  if (i >= 4)
                      throw py::index_error();
                  return *(&c.r + i);
              })
-        .def("__len__", [](const Color&) { return 4; })
+        .def("__len__", [](const Color&) -> int { return 4; })
         .def("__setitem__",
-             [](Color& c, size_t i, uint8_t value)
+             [](Color& c, size_t i, uint8_t value) -> void
              {
                  if (i >= 4)
                      throw py::index_error();
@@ -70,13 +67,15 @@ void _bind(py::module_& module)
         .def_readwrite("b", &Color::b)
         .def_readwrite("a", &Color::a)
         .def_property("hex", &Color::toHex, &Color::fromHex);
+    py::implicitly_convertible<py::sequence, Color>();
+    py::implicitly_convertible<py::str, Color>();
 
     auto subColor = module.def_submodule("color", "Color related functions");
 
     subColor.def("from_hex", &fromHex, py::arg("hex"), "Create a Color from a hex string.");
     subColor.def(
         "to_hex",
-        [](const py::object& colorObj)
+        [](const py::object& colorObj) -> std::string
         {
             if (py::isinstance<Color>(colorObj))
                 return toHex(colorObj.cast<Color>());
@@ -131,7 +130,7 @@ void _bind(py::module_& module)
 Color fromHex(std::string_view hex)
 {
     if (hex.empty())
-        return Color{0, 0, 0, 255};
+        return {0, 0, 0, 255};
 
     if (hex[0] == '#')
         hex.remove_prefix(1);
@@ -174,7 +173,7 @@ Color fromHex(std::string_view hex)
     return {0, 0, 0, 255};
 }
 
-std::string toHex(Color color)
+std::string toHex(const Color& color)
 {
     std::stringstream ss;
 
@@ -305,4 +304,21 @@ std::string Color::toHex() const
        << std::setw(2) << b << std::setw(2) << a;
 
     return "#" + ss.str();
+}
+
+bool Color::_isValid() const
+{
+    return 0 <= r && r <= 255 && 0 <= g && g <= 255 && 0 <= b && b <= 255 && 0 <= a && a <= 255;
+}
+
+Color color::_fromSeq(const py::sequence& seq)
+{
+    if (seq.size() < 3 || seq.size() > 4)
+        throw std::invalid_argument("Color sequence must be of length 3 or 4");
+
+    Color color = {seq[0].cast<uint8_t>(), seq[1].cast<uint8_t>(), seq[2].cast<uint8_t>()};
+    if (seq.size() == 4)
+        color.a = seq[3].cast<uint8_t>();
+
+    return color;
 }

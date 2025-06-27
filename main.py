@@ -1,68 +1,42 @@
 import pykraken as kn
 
 kn.init()
-
-kn.window.create((200, 150), scaled=True)
+kn.window.create("Kraken Example", (900, 500))
+renderer = kn.Renderer((200, 150))
 clock = kn.Clock()
 
-class Player:
-    def __init__(self):
-        self.pos = kn.Vec2(kn.window.get_size()) / 2
-        self.speed = 100
-        
-    def update(self, delta: float):
-        dir_vec = kn.input.get_direction("up", "right", "down", "left")
-        
-        self.pos += dir_vec * self.speed * delta
-        kn.draw.circle(self.pos, 6, (255, 255, 255))
-
-player_A = Player()
 bg_color = kn.Color("#141414")
-
-camera_A = kn.Camera(-20, 20)
-camera_A.set()
-
-kn.input.bind(
-    "up",
-    [
-        kn.InputAction(kn.S_w),
-        kn.InputAction(kn.S_UP),
-        kn.InputAction(kn.C_LY, False, 0),
-    ]
-)
-kn.input.bind(
-    "right",
-    [
-        kn.InputAction(kn.S_d),
-        kn.InputAction(kn.S_RIGHT),
-        kn.InputAction(kn.C_LX, True, 0),
-    ]
-)
-kn.input.bind(
-    "down",
-    [
-        kn.InputAction(kn.S_s),
-        kn.InputAction(kn.S_DOWN),
-        kn.InputAction(kn.C_LY, True, 0),
-    ]
-)
-kn.input.bind(
-    "left",
-    [
-        kn.InputAction(kn.S_a),
-        kn.InputAction(kn.S_LEFT),
-        kn.InputAction(kn.C_LX, False, 0),
-    ]
-)
+texture = kn.Texture(renderer, "img.png")
+rect = texture.get_rect()
+rect.scale_by(0.5)
+pos = kn.Vec2()
+texture.flip.h = True
 
 while kn.window.is_open():
-    delta = clock.tick(240)
+    dt = clock.tick()
     kn.event.poll()
     
-    kn.window.clear(bg_color)
-    player_A.update(delta)
-    # playerB.update(delta)
+    if kn.key.is_just_pressed(kn.K_ESC):
+        kn.window.close()
+        
+    if kn.key.is_pressed(kn.S_a):
+        pos.x -= dt * 100
+    if kn.key.is_pressed(kn.S_d):
+        pos.x += dt * 100
+    if kn.key.is_pressed(kn.S_w):
+        pos.y -= dt * 100
+    if kn.key.is_pressed(kn.S_s):
+        pos.y += dt * 100
+    if kn.key.is_pressed(kn.S_z):
+        texture.angle -= dt * 30
+    if kn.key.is_pressed(kn.S_x):
+        texture.angle += dt * 30
+        
+    rect.center = pos
     
-    kn.window.flip()
+    renderer.clear(bg_color)
+    renderer.draw(texture, rect)
+    
+    renderer.present()
 
 kn.quit()
