@@ -1,4 +1,4 @@
-import pykraken as kn
+import kraken_engine as kn
 
 kn.init()
 kn.window.create("Kraken Example", (900, 500))

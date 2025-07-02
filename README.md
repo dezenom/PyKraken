@@ -11,11 +11,11 @@ It is ideal for solo developers and indie teams looking to build games or intera
 
 ## Documentation
 
-You can find the latest documentation [here](https://pykraken-docs.netlify.app/).
+You can find the latest documentation at [https://docs.krakenengine.org/](https://docs.krakenengine.org/).
 
 ## Community
 
-A community Discord server is available here -> [https://discord.gg/GyyddE7AD5](https://discord.gg/GyyddE7AD5).
+A community Discord server is available at [https://discord.gg/jMdx9UmqX8](https://discord.gg/jMdx9UmqX8).
 
 Join to get help or share your Kraken Engine games!
 
