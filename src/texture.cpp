@@ -3,6 +3,7 @@
 #include "Math.hpp"
 #include "Rect.hpp"
 #include "Renderer.hpp"
+#include "Surface.hpp"
 #include "Window.hpp"
 
 #include <SDL3_image/SDL_image.h>
@@ -11,34 +12,143 @@ namespace texture
 {
 void _bind(py::module_& module)
 {
-    py::class_<Texture> texture(module, "Texture");
+    py::class_<Texture> texture(module, "Texture", R"doc(
+Represents a hardware-accelerated image that can be efficiently rendered.
 
-    py::class_<Texture::Flip>(texture, "Flip")
-        .def_readwrite("h", &Texture::Flip::h)
-        .def_readwrite("v", &Texture::Flip::v);
+Textures are optimized for fast rendering operations and support various effects
+like rotation, flipping, tinting, alpha blending, and different blend modes.
+They are created from image files or surfaces and must be associated with a renderer.
+    )doc");
+
+    py::class_<Texture::Flip>(texture, "Flip", R"doc(
+Controls horizontal and vertical flipping of a texture during rendering.
+
+Used to mirror textures along the horizontal and/or vertical axes without
+creating additional texture data.
+    )doc")
+        .def_readwrite("h", &Texture::Flip::h, R"doc(
+Enable or disable horizontal flipping.
+
+When True, the texture is mirrored horizontally (left-right flip).
+        )doc")
+        .def_readwrite("v", &Texture::Flip::v, R"doc(
+Enable or disable vertical flipping.
+
+When True, the texture is mirrored vertically (top-bottom flip).
+        )doc");
 
     texture
-        .def(py::init<const Renderer&, const std::string&>())
+        .def(py::init<const Renderer&, const std::string&>(), py::arg("renderer"),
+             py::arg("file_path"), R"doc(
+Create a Texture by loading an image from a file.
 
-        .def_readwrite("angle", &Texture::angle)
-        .def_readwrite("flip", &Texture::flip)
+Args:
+    renderer (Renderer): The renderer that will own this texture.
+    file_path (str): Path to the image file to load.
 
-        .def("get_size", [](Texture& self) -> py::tuple { return self.getSize(); })
-        .def("get_rect", &Texture::getRect)
-        .def("set_tint", &Texture::setTint)
-        .def("get_tint", &Texture::getTint)
-        .def("set_alpha", &Texture::setAlpha)
-        .def("get_alpha", &Texture::getAlpha)
-        .def("make_additive", &Texture::makeAdditive)
-        .def("make_multiply", &Texture::makeMultiply)
-        .def("make_normal", &Texture::makeNormal);
+Raises:
+    ValueError: If file_path is empty.
+    RuntimeError: If the file cannot be loaded or texture creation fails.
+        )doc")
+        .def(py::init<const Renderer&, const Surface&>(), py::arg("renderer"), py::arg("surface"),
+             R"doc(
+Create a Texture from an existing Surface.
+
+Args:
+    renderer (Renderer): The renderer that will own this texture.
+    surface (Surface): The surface to convert to a texture.
+
+Raises:
+    RuntimeError: If texture creation from surface fails.
+        )doc")
+
+        .def_readwrite("angle", &Texture::angle, R"doc(
+The rotation angle in degrees for rendering.
+
+When the texture is drawn, it will be rotated by this angle around its center.
+        )doc")
+        .def_readwrite("flip", &Texture::flip, R"doc(
+The flip settings for horizontal and vertical mirroring.
+
+Controls whether the texture is flipped horizontally and/or vertically during rendering.
+        )doc")
+
+        .def(
+            "get_size", [](Texture& self) -> py::tuple { return self.getSize(); }, R"doc(
+Get the size of the texture.
+
+Returns:
+    tuple[float, float]: The texture size as (width, height).
+        )doc")
+        .def("get_rect", &Texture::getRect, R"doc(
+Get a rectangle representing the texture bounds.
+
+Returns:
+    Rect: A rectangle with position (0, 0) and the texture's dimensions.
+        )doc")
+        .def("set_tint", &Texture::setTint, py::arg("color"), R"doc(
+Set the color tint applied to the texture during rendering.
+
+The tint color is multiplied with the texture's pixels, allowing for
+color effects and lighting.
+
+Args:
+    color (Color): The tint color to apply.
+        )doc")
+        .def("get_tint", &Texture::getTint, R"doc(
+Get the current color tint applied to the texture.
+
+Returns:
+    Color: The current tint color.
+        )doc")
+        .def("set_alpha", &Texture::setAlpha, py::arg("alpha"), R"doc(
+Set the alpha (transparency) modulation for the texture.
+
+Args:
+    alpha (float): The alpha value, typically in range [0.0, 1.0] where
+                  0.0 is fully transparent and 1.0 is fully opaque.
+        )doc")
+        .def("get_alpha", &Texture::getAlpha, R"doc(
+Get the current alpha modulation value.
+
+Returns:
+    float: The current alpha value.
+        )doc")
+        .def("make_additive", &Texture::makeAdditive, R"doc(
+Set the texture to use additive blending mode.
+
+In additive mode, the texture's colors are added to the destination,
+creating bright, glowing effects.
+        )doc")
+        .def("make_multiply", &Texture::makeMultiply, R"doc(
+Set the texture to use multiply blending mode.
+
+In multiply mode, the texture's colors are multiplied with the destination,
+creating darkening and shadow effects.
+        )doc")
+        .def("make_normal", &Texture::makeNormal, R"doc(
+Set the texture to use normal (alpha) blending mode.
+
+This is the default blending mode for standard transparency effects.
+        )doc");
 }
 } // namespace texture
 
+Texture::Texture(const Renderer& renderer, const Surface& surface)
+{
+    m_texPtr = SDL_CreateTextureFromSurface(renderer.getSDL(), surface.getSDL());
+
+    if (!m_texPtr)
+    {
+        throw std::runtime_error("Failed to create texture from surface: " +
+                                 std::string(SDL_GetError()));
+    }
+
+    SDL_SetTextureScaleMode(m_texPtr, SDL_SCALEMODE_NEAREST);
+}
+
 Texture::Texture(const Renderer& renderer, const std::string& filePath)
 {
-    SDL_Renderer* sdlRenderer = renderer.getSDL();
-
     if (filePath.empty())
         throw std::invalid_argument("File path cannot be empty");
 
@@ -48,7 +158,7 @@ Texture::Texture(const Renderer& renderer, const std::string& filePath)
         m_texPtr = nullptr;
     }
 
-    m_texPtr = IMG_LoadTexture(sdlRenderer, filePath.c_str());
+    m_texPtr = IMG_LoadTexture(renderer.getSDL(), filePath.c_str());
     if (!m_texPtr)
         throw std::runtime_error("Failed to load texture: " + std::string(SDL_GetError()));
 
@@ -77,7 +187,7 @@ void Texture::loadFromSDL(SDL_Texture* sdlTexture)
     m_texPtr = sdlTexture;
 }
 
-math::Vec2 Texture::getSize() const
+Vec2 Texture::getSize() const
 {
     float w, h;
     SDL_GetTextureSize(m_texPtr, &w, &h);

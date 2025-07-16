@@ -7,13 +7,11 @@
 struct Color;
 class Rect;
 class Renderer;
+class Surface;
 
 namespace py = pybind11;
 
-namespace math
-{
 class Vec2;
-}
 
 namespace texture
 {
@@ -31,12 +29,13 @@ class Texture final
     } flip;
 
     explicit Texture(SDL_Texture* sdlTexture);
-    explicit Texture(const Renderer& renderer, const std::string& filePath);
+    Texture(const Renderer& renderer, const Surface& surface);
+    Texture(const Renderer& renderer, const std::string& filePath);
     ~Texture();
 
     void loadFromSDL(SDL_Texture* sdlTexture);
 
-    math::Vec2 getSize() const;
+    Vec2 getSize() const;
 
     Rect getRect() const;
 

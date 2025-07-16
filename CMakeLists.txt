@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.15...3.30)
+cmake_minimum_required(VERSION 3.18.2...3.30)
 
 project(
   ${SKBUILD_PROJECT_NAME}
@@ -6,6 +6,8 @@ project(
   LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 
 set(PYBIND11_FINDPYTHON ON)
 find_package(pybind11 CONFIG REQUIRED) # PyBind11
@@ -30,8 +32,10 @@ pybind11_add_module(_core MODULE
   src/mouse.cpp
   src/rect.cpp
   src/renderer.cpp
+  src/surface.cpp
   src/texture.cpp
   src/time.cpp
+  src/transform.cpp
   src/window.cpp
   WITH_SOABI
 )
@@ -43,4 +47,4 @@ target_include_directories(_core PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
-install(TARGETS _core DESTINATION ${SKBUILD_PROJECT_NAME})
+install(TARGETS _core DESTINATION pykraken)
