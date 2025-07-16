@@ -29,11 +29,11 @@ license = "MIT"
 license-files = ["LICENSE"]
 
 [project.urls]
-Homepage = "https://docs.krakenengine.org/"
-Issues = "https://github.com/Kraken-Engine/PyKraken/issues"
-Documentation = "https://docs.krakenengine.org/docs/getting-started/introduction"
-Release Notes = "https://github.com/Kraken-Engine/PyKraken/releases"
-Source = "https://github.com/Kraken-Engine/PyKraken"
+"Homepage" = "https://docs.krakenengine.org/"
+"Issues" = "https://github.com/Kraken-Engine/PyKraken/issues"
+"Documentation" = "https://docs.krakenengine.org/docs/getting-started/introduction"
+"Release Notes" = "https://github.com/Kraken-Engine/PyKraken/releases"
+"Source" = "https://github.com/Kraken-Engine/PyKraken"
 
 [tool.scikit-build]
 wheel.packages = ["src/pykraken"]
