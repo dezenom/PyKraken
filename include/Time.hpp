@@ -1,5 +1,6 @@
 #pragma once
 
+#include <chrono>
 #include <pybind11/pybind11.h>
 
 namespace py = pybind11;
@@ -8,22 +9,47 @@ namespace kn::time
 {
 void _bind(py::module_& module);
 
-class Clock
-{
-  public:
-    Clock();
-    ~Clock() = default;
+double getDelta();
 
-    double tick(uint16_t frameRate = 0);
+void setCap(uint16_t frameRate);
 
-    uint64_t getFPS() const;
+double getFPS();
 
-  private:
-    uint64_t m_lastTick;
-    uint64_t m_fps = 0;
-};
-
-double getElapsedTime();
+double getElapsed();
 
 void delay(uint64_t ms);
+
+void _tick();
 } // namespace kn::time
+
+class Timer
+{
+  public:
+    explicit Timer(double duration);
+    ~Timer() = default;
+
+    void start();
+
+    void pause();
+
+    void resume();
+
+    void reset();
+
+    bool isDone() const;
+
+    double timeRemaining() const;
+
+    double elapsedTime() const;
+
+    double progress() const;
+
+  private:
+    double m_duration;
+    bool m_started = false;
+    bool m_paused = false;
+    double m_elapsedPausedTime = 0.0;
+
+    std::chrono::steady_clock::time_point m_startTime;
+    std::chrono::steady_clock::time_point m_pauseTime;
+};

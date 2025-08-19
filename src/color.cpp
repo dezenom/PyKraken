@@ -7,7 +7,7 @@ namespace color
 {
 void _bind(py::module_& module)
 {
-    py::class_<Color>(module, "Color", R"doc(
+    py::classh<Color>(module, "Color", R"doc(
 Represents an RGBA color.
 
 Each channel (r, g, b, a) is an 8-bit unsigned integer.
@@ -29,19 +29,21 @@ Args:
         )doc")
 
         .def(py::init(
-                 [](const py::object& objparam) -> Color*
+                 [](const py::object& objparam) -> Color
                  {
                      if (py::isinstance<py::str>(objparam))
-                         return new Color(fromHex(objparam.cast<std::string>()));
+                         return fromHex(objparam.cast<std::string>());
 
                      if (py::isinstance<py::sequence>(objparam))
                      {
                          auto seq = objparam.cast<py::sequence>();
                          if (seq.size() == 3 || seq.size() == 4)
                          {
-                             auto* c = new Color{seq[0].cast<uint8_t>(), seq[1].cast<uint8_t>(),
-                                                 seq[2].cast<uint8_t>()};
-                             c->a = seq.size() == 4 ? seq[3].cast<uint8_t>() : 255;
+                             Color c;
+                             c.r = seq[0].cast<uint8_t>();
+                             c.g = seq[1].cast<uint8_t>();
+                             c.b = seq[2].cast<uint8_t>();
+                             c.a = seq.size() == 4 ? seq[3].cast<uint8_t>() : 255;
                              return c;
                          }
                      }
@@ -67,6 +69,9 @@ Examples:
             },
             R"doc(
 Return a human-readable string representation.
+
+Returns:
+    str: String in format "(r, g, b, a)" with integer values.
         )doc")
 
         .def(
@@ -78,29 +83,48 @@ Return a human-readable string representation.
             },
             R"doc(
 Return a string suitable for debugging and recreation.
+
+Returns:
+    str: String in format "Color(r, g, b, a)" that can recreate the object.
         )doc")
 
         .def(
             "__iter__", [](const Color& c) -> py::iterator
             { return py::make_iterator(&c.r, &c.r + 4); }, py::keep_alive<0, 1>(), R"doc(
-Return an iterator over (r, g, b, a).
+Return an iterator over color channels.
+
+Yields:
+    int: The r, g, b, a values in that order (0-255 each).
+
+Example:
+    for channel in color:
+        print(channel)  # Prints r, g, b, a values
         )doc")
 
         .def(
             "__getitem__",
-            [](const Color& c, size_t i) -> uint8_t
+            [](const Color& c, size_t i) -> int
             {
                 if (i >= 4)
                     throw py::index_error();
                 return *(&c.r + i);
             },
             py::arg("index"), R"doc(
-Access color channels by index (0=r, 1=g, 2=b, 3=a).
+Access color channels by index.
+
+Args:
+    index (int): Channel index (0=r, 1=g, 2=b, 3=a).
+
+Returns:
+    int: Channel value (0-255).
+
+Raises:
+    IndexError: If index is not in range [0, 3].
         )doc")
 
         .def(
             "__setitem__",
-            [](Color& c, size_t i, uint8_t value)
+            [](Color& c, size_t i, uint8_t value) -> void
             {
                 if (i >= 4)
                     throw py::index_error();
@@ -108,66 +132,111 @@ Access color channels by index (0=r, 1=g, 2=b, 3=a).
             },
             py::arg("index"), py::arg("value"), R"doc(
 Set a color channel by index.
+
+Args:
+    index (int): Channel index (0=r, 1=g, 2=b, 3=a).
+    value (int): New channel value (0-255).
+
+Raises:
+    IndexError: If index is not in range [0, 3].
         )doc")
 
         .def(
-            "__len__", [](const Color&) { return 4; }, R"doc(
-Return the number of channels (always 4).
+            "__len__", [](const Color&) -> int { return 4; }, R"doc(
+Return the number of color channels.
+
+Returns:
+    int: Always returns 4 (for r, g, b, a channels).
         )doc")
 
         .def_readwrite("r", &Color::r, R"doc(
-Red channel (0-255).
+Red channel value.
+
+Type: int
+Range: 0-255 (8-bit unsigned integer)
         )doc")
         .def_readwrite("g", &Color::g, R"doc(
-Green channel (0-255).
+Green channel value.
+
+Type: int
+Range: 0-255 (8-bit unsigned integer)
         )doc")
         .def_readwrite("b", &Color::b, R"doc(
-Blue channel (0-255).
+Blue channel value.
+
+Type: int
+Range: 0-255 (8-bit unsigned integer)
         )doc")
         .def_readwrite("a", &Color::a, R"doc(
-Alpha channel (0-255).
+Alpha (transparency) channel value.
+
+Type: int
+Range: 0-255 (8-bit unsigned integer)
+Note: 0 = fully transparent, 255 = fully opaque
         )doc")
 
         .def_property("hex", &Color::toHex, &Color::fromHex, R"doc(
-Get or set the color as a hex string (e.g. "#FF00FF" or "#FF00FF80").
+Get or set the color as a hex string.
+
+When getting, returns an 8-digit hex string in the format "#RRGGBBAA".
+When setting, accepts various hex formats (see from_hex for details).
+
+Example:
+    color.hex = "#FF00FF"     # Set to magenta
+    print(color.hex)          # Returns "#FF00FFFF"
+        )doc")
+        .def_property("hsv", &Color::toHSV, &Color::fromHSV, R"doc(
+Get or set the color as an HSV tuple.
+
+When getting, returns a tuple of (hue, saturation, value, alpha).
+When setting, accepts a tuple of 3 or 4 values.
+
+Values:
+    hue (float): Hue angle in degrees (0-360)
+    saturation (float): Saturation level (0-1)
+    value (float): Brightness/value level (0-1)
+    alpha (float): Alpha transparency (0-1), optional
+
+Example:
+    color.hsv = (120, 1.0, 1.0)        # Pure green
+    color.hsv = (240, 0.5, 0.8, 0.9)   # Light blue with transparency
+    h, s, v, a = color.hsv              # Get HSV values
         )doc");
 
     py::implicitly_convertible<py::sequence, Color>();
     py::implicitly_convertible<py::str, Color>();
 
-    auto subColor = module.def_submodule("color", "Color-related functions and constants");
+    auto subColor = module.def_submodule("color", R"doc(
+Color utility functions and predefined color constants.
+
+This module provides functions for color manipulation and conversion,
+as well as commonly used color constants for convenience.
+    )doc");
 
     subColor.def("from_hex", &fromHex, py::arg("hex"), R"doc(
-Create a Color from a hex string (e.g. "#FF00FF" or "#FF00FF80").
+Create a Color from a hex string.
+
+Supports multiple hex formats:
+- "#RRGGBB" - 6-digit hex with full opacity
+- "#RRGGBBAA" - 8-digit hex with alpha
+- "#RGB" - 3-digit hex (each digit duplicated)
+- "#RGBA" - 4-digit hex with alpha (each digit duplicated)
+
+Args:
+    hex (str): Hex color string (with or without '#' prefix).
+
+Returns:
+    Color: New Color object from the hex string.
+
+Examples:
+    from_hex("#FF00FF")      # Magenta, full opacity
+    from_hex("#FF00FF80")    # Magenta, 50% opacity
+    from_hex("#F0F")         # Same as "#FF00FF"
+    from_hex("RGB")          # Without '#' prefix
         )doc");
 
-    subColor.def(
-        "to_hex",
-        [](const py::object& colorObj) -> std::string
-        {
-            if (py::isinstance<Color>(colorObj))
-                return toHex(colorObj.cast<Color>());
-
-            if (py::isinstance<py::sequence>(colorObj))
-            {
-                auto seq = colorObj.cast<py::sequence>();
-                if (seq.size() == 3 || seq.size() == 4)
-                {
-                    Color c = {seq[0].cast<uint8_t>(), seq[1].cast<uint8_t>(),
-                               seq[2].cast<uint8_t>()};
-                    c.a = seq.size() == 4 ? seq[3].cast<uint8_t>() : 255;
-                    return toHex(c);
-                }
-            }
-
-            throw std::invalid_argument("Argument must be a Color or a sequence of 3–4 integers.");
-        },
-        py::arg("color"), R"doc(
-Convert a Color or RGB(A) sequence to a hex string.
-        )doc");
-
-    subColor.def("from_hsv", &fromHSV, py::arg("h"), py::arg("s"), py::arg("v"),
-                 py::arg("a") = 1.0f, R"doc(
+    subColor.def("from_hsv", &fromHSV, py::arg("h"), py::arg("s"), py::arg("v"), py::arg("a") = 1.0,
+                 R"doc(
 Create a Color from HSV(A) values.
 
 Args:
@@ -180,14 +249,48 @@ Args:
     subColor.def("lerp", &lerp, py::arg("a"), py::arg("b"), py::arg("t"), R"doc(
 Linearly interpolate between two colors.
 
+Performs component-wise linear interpolation between start and end colors.
+All RGBA channels are interpolated independently.
+
 Args:
-    a (Color): Start color.
-    b (Color): End color.
-    t (float): Blend factor (0.0 = a, 1.0 = b).
+    a (Color): Start color (when t=0.0).
+    b (Color): End color (when t=1.0).
+    t (float): Blend factor. Values outside [0,1] will extrapolate.
+
+Returns:
+    Color: New interpolated color.
+
+Examples:
+    lerp(Color.RED, Color.BLUE, 0.5)    # Purple (halfway between red and blue)
+    lerp(Color.BLACK, Color.WHITE, 0.25) # Dark gray
         )doc");
 
     subColor.def("invert", &invert, py::arg("color"), R"doc(
-Return the inverse of a color (flips RGB channels).
+Return the inverse of a color by flipping RGB channels.
+
+The alpha channel is preserved unchanged.
+
+Args:
+    color (Color): The color to invert.
+
+Returns:
+    Color: New Color with inverted RGB values (255 - original value).
+
+Example:
+    invert(Color(255, 0, 128, 200))  # Returns Color(0, 255, 127, 200)
+        )doc");
+
+    subColor.def("grayscale", &grayscale, py::arg("color"), R"doc(
+Convert a color to grayscale.
+
+Args:
+    color (Color): The color to convert.
+
+Returns:
+    Color: New Color object representing the grayscale version.
+
+Example:
+    grayscale(Color(255, 0, 0))  # Returns Color(76, 76, 76, 255)
         )doc");
 
     subColor.attr("BLACK") = BLACK;
@@ -217,7 +320,7 @@ Return the inverse of a color (flips RGB channels).
 Color fromHex(std::string_view hex)
 {
     if (hex.empty())
-        return {0, 0, 0, 255};
+        throw std::invalid_argument("Hex string cannot be empty");
 
     if (hex[0] == '#')
         hex.remove_prefix(1);
@@ -256,68 +359,61 @@ Color fromHex(std::string_view hex)
                 hexToByte(std::string(2, hex[2])), hexToByte(std::string(2, hex[3]))};
     }
 
-    // Invalid format fallback
-    return {0, 0, 0, 255};
+    throw std::invalid_argument("Invalid hex string format");
 }
 
-std::string toHex(const Color& color)
+Color fromHSV(const double h, const double s, const double v, const double a)
 {
-    std::stringstream ss;
+    if (s < 0 || s > 1 || v < 0 || v > 1 || a < 0 || a > 1)
+        throw std::invalid_argument("Saturation, value, and alpha must be in the range [0, 1]");
+    if (h < 0 || h >= 360)
+        throw std::invalid_argument("Hue must be in the range [0, 360)");
 
-    ss << std::hex << std::uppercase << std::setfill('0') << std::setw(2)
-       << static_cast<int>(color.r) << std::setw(2) << static_cast<int>(color.g) << std::setw(2)
-       << static_cast<int>(color.b) << std::setw(2) << static_cast<int>(color.a);
+    const double c = v * s;
+    const double x = c * (1 - std::fabs(fmod(h / 60.0, 2.0) - 1));
+    const double m = v - c;
 
-    return "#" + ss.str();
-}
+    double r, g, b;
 
-Color fromHSV(const float h, const float s, const float v, const float a)
-{
-    const float c = v * s;
-    const float x = c * (1 - std::fabs(fmod(h / 60.0f, 2) - 1));
-    const float m = v - c;
-
-    float r, g, b;
-
-    if (h < 60)
+    if (h < 60.0)
     {
         r = c;
         g = x;
-        b = 0;
+        b = 0.0;
     }
-    else if (h < 120)
+    else if (h < 120.0)
     {
         r = x;
         g = c;
-        b = 0;
+        b = 0.0;
     }
-    else if (h < 180)
+    else if (h < 180.0)
     {
-        r = 0;
+        r = 0.0;
         g = c;
         b = x;
     }
-    else if (h < 240)
+    else if (h < 240.0)
     {
-        r = 0;
+        r = 0.0;
         g = x;
         b = c;
     }
-    else if (h < 300)
+    else if (h < 300.0)
     {
         r = x;
-        g = 0;
+        g = 0.0;
         b = c;
     }
     else
     {
         r = c;
-        g = 0;
+        g = 0.0;
         b = x;
     }
 
-    return {static_cast<uint8_t>((r + m) * 255), static_cast<uint8_t>((g + m) * 255),
-            static_cast<uint8_t>((b + m) * 255), static_cast<uint8_t>(a * 255)};
+    return {static_cast<uint8_t>((r + m) * 255.0), static_cast<uint8_t>((g + m) * 255.0),
+            static_cast<uint8_t>((b + m) * 255.0), static_cast<uint8_t>(a * 255.0)};
 }
 
 Color lerp(const Color& a, const Color& b, const double t)
@@ -332,56 +428,15 @@ Color invert(const Color& color)
     return {static_cast<uint8_t>(255 - color.r), static_cast<uint8_t>(255 - color.g),
             static_cast<uint8_t>(255 - color.b), color.a};
 }
+
+Color grayscale(const Color& color)
+{
+    uint8_t gray = static_cast<uint8_t>(0.299 * color.r + 0.587 * color.g + 0.114 * color.b);
+    return {gray, gray, gray, color.a};
+}
 } // namespace color
 
-void Color::fromHex(std::string_view hex)
-{
-    if (hex.empty())
-        return;
-
-    if (hex[0] == '#')
-        hex.remove_prefix(1);
-
-    auto hexToByte = [](std::string_view str) -> uint8_t
-    {
-        uint32_t byte;
-        std::stringstream ss;
-        ss << std::hex << str;
-        ss >> byte;
-        return static_cast<uint8_t>(byte);
-    };
-
-    if (hex.length() == 6)
-    {
-        // RRGGBB
-        r = hexToByte(hex.substr(0, 2));
-        g = hexToByte(hex.substr(2, 2));
-        b = hexToByte(hex.substr(4, 2));
-    }
-    else if (hex.length() == 8)
-    {
-        // RRGGBBAA
-        r = hexToByte(hex.substr(0, 2));
-        g = hexToByte(hex.substr(2, 2));
-        b = hexToByte(hex.substr(4, 2));
-        a = hexToByte(hex.substr(6, 2));
-    }
-    else if (hex.length() == 3)
-    {
-        // RGB → duplicate each
-        r = hexToByte(std::string(2, hex[0]));
-        g = hexToByte(std::string(2, hex[1]));
-        b = hexToByte(std::string(2, hex[2]));
-    }
-    else if (hex.length() == 4)
-    {
-        // RGBA → duplicate each
-        r = hexToByte(std::string(2, hex[0]));
-        g = hexToByte(std::string(2, hex[1]));
-        b = hexToByte(std::string(2, hex[2]));
-        a = hexToByte(std::string(2, hex[3]));
-    }
-}
+void Color::fromHex(std::string_view hex) { *this = color::fromHex(hex); }
 
 std::string Color::toHex() const
 {
@@ -393,19 +448,54 @@ std::string Color::toHex() const
     return "#" + ss.str();
 }
 
+void Color::fromHSV(const py::sequence& hsv)
+{
+    if (hsv.size() < 3 || hsv.size() > 4)
+        throw std::invalid_argument("HSV tuple must have 3 or 4 elements.");
+
+    const auto h = hsv[0].cast<float>();
+    const auto s = hsv[1].cast<float>();
+    const auto v = hsv[2].cast<float>();
+    const auto a = hsv.size() == 4 ? hsv[3].cast<float>() : 1.0f;
+
+    *this = color::fromHSV(h, s, v, a);
+}
+
+py::tuple Color::toHSV() const
+{
+    float rNorm = r / 255.f;
+    float gNorm = g / 255.f;
+    float bNorm = b / 255.f;
+
+    float maxVal = std::max({rNorm, gNorm, bNorm});
+    float minVal = std::min({rNorm, gNorm, bNorm});
+    float delta = maxVal - minVal;
+
+    float h, s, v = maxVal;
+
+    if (delta < 0.00001f)
+    {
+        h = 0; // Undefined hue
+        s = 0;
+    }
+    else
+    {
+        s = delta / maxVal;
+
+        if (maxVal == rNorm)
+            h = (gNorm - bNorm) / delta + (gNorm < bNorm ? 6 : 0);
+        else if (maxVal == gNorm)
+            h = (bNorm - rNorm) / delta + 2;
+        else
+            h = (rNorm - gNorm) / delta + 4;
+
+        h *= 60; // Convert to degrees
+    }
+
+    return py::make_tuple(h, s, v, a / 255.f);
+}
+
 bool Color::_isValid() const
 {
     return 0 <= r && r <= 255 && 0 <= g && g <= 255 && 0 <= b && b <= 255 && 0 <= a && a <= 255;
-}
-
-Color color::_fromSeq(const py::sequence& seq)
-{
-    if (seq.size() < 3 || seq.size() > 4)
-        throw std::invalid_argument("Color sequence must be of length 3 or 4");
-
-    Color color = {seq[0].cast<uint8_t>(), seq[1].cast<uint8_t>(), seq[2].cast<uint8_t>()};
-    if (seq.size() == 4)
-        color.a = seq[3].cast<uint8_t>();
-
-    return color;
 }

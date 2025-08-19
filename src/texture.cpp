@@ -1,10 +1,12 @@
 #include "Texture.hpp"
+#include "Camera.hpp"
 #include "Color.hpp"
 #include "Math.hpp"
+#include "PixelArray.hpp"
 #include "Rect.hpp"
 #include "Renderer.hpp"
-#include "Surface.hpp"
 #include "Window.hpp"
+#include "_globals.hpp"
 
 #include <SDL3_image/SDL_image.h>
 
@@ -12,15 +14,15 @@ namespace texture
 {
 void _bind(py::module_& module)
 {
-    py::class_<Texture> texture(module, "Texture", R"doc(
+    py::classh<Texture> texture(module, "Texture", R"doc(
 Represents a hardware-accelerated image that can be efficiently rendered.
 
 Textures are optimized for fast rendering operations and support various effects
 like rotation, flipping, tinting, alpha blending, and different blend modes.
-They are created from image files or surfaces and must be associated with a renderer.
+They can be created from image files or pixel arrays.
     )doc");
 
-    py::class_<Texture::Flip>(texture, "Flip", R"doc(
+    py::classh<Texture::Flip>(texture, "Flip", R"doc(
 Controls horizontal and vertical flipping of a texture during rendering.
 
 Used to mirror textures along the horizontal and/or vertical axes without
@@ -38,28 +40,24 @@ When True, the texture is mirrored vertically (top-bottom flip).
         )doc");
 
     texture
-        .def(py::init<const Renderer&, const std::string&>(), py::arg("renderer"),
-             py::arg("file_path"), R"doc(
+        .def(py::init<const std::string&>(), py::arg("file_path"), R"doc(
 Create a Texture by loading an image from a file.
 
 Args:
-    renderer (Renderer): The renderer that will own this texture.
     file_path (str): Path to the image file to load.
 
 Raises:
     ValueError: If file_path is empty.
     RuntimeError: If the file cannot be loaded or texture creation fails.
         )doc")
-        .def(py::init<const Renderer&, const Surface&>(), py::arg("renderer"), py::arg("surface"),
-             R"doc(
-Create a Texture from an existing Surface.
+        .def(py::init<const PixelArray&>(), py::arg("pixel_array"), R"doc(
+Create a Texture from an existing PixelArray.
 
 Args:
-    renderer (Renderer): The renderer that will own this texture.
-    surface (Surface): The surface to convert to a texture.
+    pixel_array (PixelArray): The pixel array to convert to a texture.
 
 Raises:
-    RuntimeError: If texture creation from surface fails.
+    RuntimeError: If texture creation from pixel array fails.
         )doc")
 
         .def_readwrite("angle", &Texture::angle, R"doc(
@@ -73,12 +71,11 @@ The flip settings for horizontal and vertical mirroring.
 Controls whether the texture is flipped horizontally and/or vertically during rendering.
         )doc")
 
-        .def(
-            "get_size", [](Texture& self) -> py::tuple { return self.getSize(); }, R"doc(
+        .def("get_size", &Texture::getSize, R"doc(
 Get the size of the texture.
 
 Returns:
-    tuple[float, float]: The texture size as (width, height).
+    Vec2: The texture size as (width, height).
         )doc")
         .def("get_rect", &Texture::getRect, R"doc(
 Get a rectangle representing the texture bounds.
@@ -130,24 +127,41 @@ creating darkening and shadow effects.
 Set the texture to use normal (alpha) blending mode.
 
 This is the default blending mode for standard transparency effects.
-        )doc");
+        )doc")
+        .def("render", py::overload_cast<Rect, py::object>(&Texture::render), py::arg("dst"),
+             py::arg("src") = py::none(), R"doc(
+Render this texture with specified destination and source rectangles.
+
+Args:
+    dst (Rect): The destination rectangle on the renderer.
+    src (Rect, optional): The source rectangle from the texture. Defaults to entire texture if not specified.
+    )doc")
+        .def("render", py::overload_cast<py::object, Anchor>(&Texture::render),
+             py::arg("pos") = py::none(), py::arg("anchor") = Anchor::CENTER,
+             R"doc(
+Render this texture at the specified position with anchor alignment.
+
+Args:
+    pos (Vec2, optional): The position to draw at. Defaults to (0, 0).
+    anchor (Anchor, optional): The anchor point for positioning. Defaults to CENTER.
+    )doc");
 }
 } // namespace texture
 
-Texture::Texture(const Renderer& renderer, const Surface& surface)
+Texture::Texture(const PixelArray& pixelArray)
 {
-    m_texPtr = SDL_CreateTextureFromSurface(renderer.getSDL(), surface.getSDL());
+    m_texPtr = SDL_CreateTextureFromSurface(renderer::get(), pixelArray.getSDL());
 
     if (!m_texPtr)
     {
-        throw std::runtime_error("Failed to create texture from surface: " +
+        throw std::runtime_error("Failed to create texture from PixelArray: " +
                                  std::string(SDL_GetError()));
     }
 
     SDL_SetTextureScaleMode(m_texPtr, SDL_SCALEMODE_NEAREST);
 }
 
-Texture::Texture(const Renderer& renderer, const std::string& filePath)
+Texture::Texture(const std::string& filePath)
 {
     if (filePath.empty())
         throw std::invalid_argument("File path cannot be empty");
@@ -158,7 +172,7 @@ Texture::Texture(const Renderer& renderer, const std::string& filePath)
         m_texPtr = nullptr;
     }
 
-    m_texPtr = IMG_LoadTexture(renderer.getSDL(), filePath.c_str());
+    m_texPtr = IMG_LoadTexture(renderer::get(), filePath.c_str());
     if (!m_texPtr)
         throw std::runtime_error("Failed to load texture: " + std::string(SDL_GetError()));
 
@@ -229,3 +243,97 @@ void Texture::makeMultiply() const { SDL_SetTextureBlendMode(m_texPtr, SDL_BLEND
 void Texture::makeNormal() const { SDL_SetTextureBlendMode(m_texPtr, SDL_BLENDMODE_BLEND); }
 
 SDL_Texture* Texture::getSDL() const { return m_texPtr; }
+
+void Texture::render(Rect dstRect, py::object srcRect)
+{
+    SDL_FRect srcSDLRect;
+    if (!srcRect.is_none())
+    {
+        try
+        {
+            srcSDLRect = srcRect.cast<Rect>();
+        }
+        catch (const py::cast_error&)
+        {
+            throw std::invalid_argument("'src' must be a Rect");
+        }
+    }
+    else
+    {
+        srcSDLRect = this->getRect();
+    }
+
+    Vec2 cameraPos = camera::getActivePos();
+
+    SDL_FlipMode flipAxis = SDL_FLIP_NONE;
+    if (this->flip.h)
+        flipAxis = static_cast<SDL_FlipMode>(flipAxis | SDL_FLIP_HORIZONTAL);
+    if (this->flip.v)
+        flipAxis = static_cast<SDL_FlipMode>(flipAxis | SDL_FLIP_VERTICAL);
+
+    dstRect.x -= cameraPos.x;
+    dstRect.y -= cameraPos.y;
+    SDL_FRect dstSDLRect = dstRect;
+
+    SDL_RenderTextureRotated(renderer::get(), m_texPtr, &srcSDLRect, &dstSDLRect, this->angle,
+                             nullptr, flipAxis);
+}
+
+void Texture::render(py::object pos, const Anchor anchor)
+{
+    Vec2 drawPos;
+    if (!pos.is_none())
+    {
+        try
+        {
+            drawPos = pos.cast<Vec2>();
+        }
+        catch (const py::cast_error&)
+        {
+            throw std::invalid_argument("'pos' must be a Vec2");
+        }
+    }
+
+    SDL_FlipMode flipAxis = SDL_FLIP_NONE;
+    if (this->flip.h)
+        flipAxis = static_cast<SDL_FlipMode>(flipAxis | SDL_FLIP_HORIZONTAL);
+    if (this->flip.v)
+        flipAxis = static_cast<SDL_FlipMode>(flipAxis | SDL_FLIP_VERTICAL);
+
+    drawPos -= camera::getActivePos();
+    Rect rect = this->getRect();
+    switch (anchor)
+    {
+    case Anchor::TOP_LEFT:
+        rect.setTopLeft(drawPos);
+        break;
+    case Anchor::TOP_MID:
+        rect.setTopMid(drawPos);
+        break;
+    case Anchor::TOP_RIGHT:
+        rect.setTopRight(drawPos);
+        break;
+    case Anchor::MID_LEFT:
+        rect.setMidLeft(drawPos);
+        break;
+    case Anchor::CENTER:
+        rect.setCenter(drawPos);
+        break;
+    case Anchor::MID_RIGHT:
+        rect.setMidRight(drawPos);
+        break;
+    case Anchor::BOTTOM_LEFT:
+        rect.setBottomLeft(drawPos);
+        break;
+    case Anchor::BOTTOM_MID:
+        rect.setBottomMid(drawPos);
+        break;
+    case Anchor::BOTTOM_RIGHT:
+        rect.setBottomRight(drawPos);
+        break;
+    }
+
+    const SDL_FRect dstSDLRect = rect;
+    SDL_RenderTextureRotated(renderer::get(), m_texPtr, nullptr, &dstSDLRect, this->angle, nullptr,
+                             flipAxis);
+}

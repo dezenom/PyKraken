@@ -22,6 +22,7 @@ pybind11_add_module(_core MODULE
   src/circle.cpp
   src/color.cpp
   src/constants.cpp
+  src/draw.cpp
   src/ease.cpp
   src/event.cpp
   src/gamepad.cpp
@@ -31,9 +32,10 @@ pybind11_add_module(_core MODULE
   src/math.cpp
   src/mixer.cpp
   src/mouse.cpp
+  src/pixel_array.cpp
+  src/polygon.cpp
   src/rect.cpp
   src/renderer.cpp
-  src/surface.cpp
   src/texture.cpp
   src/time.cpp
   src/transform.cpp

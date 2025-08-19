@@ -5,8 +5,8 @@
 #include "Mouse.hpp"
 
 #include <algorithm>
-#include <unordered_map>
 #include <pybind11/stl.h>
+#include <unordered_map>
 
 template <class... Ts> struct overloaded : Ts...
 {
@@ -20,7 +20,7 @@ static std::unordered_map<std::string, std::vector<InputAction>> _inputBindings;
 
 void _bind(py::module_& module)
 {
-    py::class_<InputAction>(module, "InputAction", R"doc(
+    py::classh<InputAction>(module, "InputAction", R"doc(
 Represents a single input trigger such as a key, mouse button, or gamepad control.
     )doc")
 
@@ -172,8 +172,8 @@ Vec2 getDirection(const std::string& up, const std::string& right, const std::st
                   const std::string& left)
 {
     Vec2 directionVec;
-    const auto leftStick = gamepad::getLeftStick();
-    const auto rightStick = gamepad::getRightStick();
+    const Vec2 leftStick = gamepad::getLeftStick();
+    const Vec2 rightStick = gamepad::getRightStick();
 
     const auto processActions = [&](const std::string& name, double& axisValue, int direction)
     {
@@ -231,8 +231,7 @@ Vec2 getDirection(const std::string& up, const std::string& right, const std::st
     processActions(down, directionVec.y, 1);
     processActions(left, directionVec.x, -1);
 
-    if (!directionVec.isZero())
-        directionVec.normalize();
+    directionVec.normalize();
 
     return directionVec;
 }
@@ -240,8 +239,8 @@ Vec2 getDirection(const std::string& up, const std::string& right, const std::st
 double getAxis(const std::string& negative, const std::string& positive)
 {
     double axisValue = 0.0;
-    const auto leftStick = gamepad::getLeftStick();
-    const auto rightStick = gamepad::getRightStick();
+    const Vec2 leftStick = gamepad::getLeftStick();
+    const Vec2 rightStick = gamepad::getRightStick();
 
     const auto processActions = [&](const std::string& name, int direction)
     {
