@@ -1,4 +1,5 @@
 #include "Ease.hpp"
+#include "Time.hpp"
 
 #include <pybind11/functional.h>
 
@@ -16,7 +17,7 @@ namespace ease
 {
 void _bind(py::module_& module)
 {
-    py::class_<EasingAnimation>(module, "EasingAnimation", R"doc(
+    py::classh<EasingAnimation>(module, "EasingAnimation", R"doc(
 A class for animating values over time using easing functions.
 
 This class supports pausing, resuming, reversing, and checking progress.
@@ -33,11 +34,9 @@ Args:
     easeFunc (Callable): Easing function that maps [0, 1] → [0, 1].
         )doc")
 
-        .def("step", &EasingAnimation::step, py::arg("delta"), R"doc(
-Advance the animation by delta time and return the current position.
+        .def("step", &EasingAnimation::step, R"doc(
+Advance the animation get its current position.
 
-Args:
-    delta (float): Time step to progress the animation.
 Returns:
     Vec2: Interpolated position.
         )doc")
@@ -182,7 +181,7 @@ Returns:
     float: Eased result.
     )doc");
 
-    subEase.def("in_sine", &inSine, py::arg("t"), R"doc(
+    subEase.def("in_sin", &inSin, py::arg("t"), R"doc(
 Sinusoidal easing in.
 
 Args:
@@ -191,7 +190,7 @@ Returns:
     float: Eased result.
     )doc");
 
-    subEase.def("out_sine", &outSine, py::arg("t"), R"doc(
+    subEase.def("out_sin", &outSin, py::arg("t"), R"doc(
 Sinusoidal easing out.
 
 Args:
@@ -200,7 +199,7 @@ Returns:
     float: Eased result.
     )doc");
 
-    subEase.def("in_out_sine", &inOutSine, py::arg("t"), R"doc(
+    subEase.def("in_out_sin", &inOutSin, py::arg("t"), R"doc(
 Sinusoidal easing in and out.
 
 Args:
@@ -351,12 +350,13 @@ EasingAnimation::EasingAnimation(const Vec2& start, const Vec2& end, double dura
 {
 }
 
-Vec2 EasingAnimation::step(const double deltaTime)
+Vec2 EasingAnimation::step()
 {
     if (state == State::PAUSED || state == State::DONE)
         return getCurrentPosition();
 
-    elapsedTime += (forward ? deltaTime : -deltaTime);
+    const double delta = kn::time::getDelta();
+    elapsedTime += (forward ? delta : -delta);
     elapsedTime = std::max(0.0, std::min(elapsedTime, duration));
 
     if (elapsedTime == duration || elapsedTime == 0.0)
@@ -460,11 +460,11 @@ double inOutQuint(const double t)
     return 0.5 * f * f * f * f * f + 1;
 }
 
-double inSine(const double t) { return sin((t - 1) * M_PI_2) + 1; }
+double inSin(const double t) { return sin((t - 1) * M_PI_2) + 1; }
 
-double outSine(const double t) { return sin(t * M_PI_2); }
+double outSin(const double t) { return sin(t * M_PI_2); }
 
-double inOutSine(const double t) { return 0.5 * (1 - cos(t * M_PI)); }
+double inOutSin(const double t) { return 0.5 * (1 - cos(t * M_PI)); }
 
 double inCirc(const double t) { return 1 - sqrt(1 - (t * t)); }
 

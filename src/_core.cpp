@@ -2,6 +2,7 @@
 #include "Circle.hpp"
 #include "Color.hpp"
 #include "Constants.hpp"
+#include "Draw.hpp"
 #include "Ease.hpp"
 #include "Event.hpp"
 #include "Gamepad.hpp"
@@ -10,9 +11,10 @@
 #include "Line.hpp"
 #include "Math.hpp"
 #include "Mouse.hpp"
+#include "PixelArray.hpp"
+#include "Polygon.hpp"
 #include "Rect.hpp"
 #include "Renderer.hpp"
-#include "Surface.hpp"
 #include "Texture.hpp"
 #include "Time.hpp"
 #include "Transform.hpp"
@@ -35,6 +37,8 @@ Call this once you're done using the engine to avoid memory leaks.
     constants::_bind(m);
     math::_bind(m);
     rect::_bind(m);
+    texture::_bind(m);
+    polygon::_bind(m);
 
     camera::_bind(m);
     circle::_bind(m);
@@ -47,9 +51,10 @@ Call this once you're done using the engine to avoid memory leaks.
     line::_bind(m);
     mouse::_bind(m);
     renderer::_bind(m);
-    surface::_bind(m);
-    texture::_bind(m);
+    pixel_array::_bind(m);
     kn::time::_bind(m);
     transform::_bind(m);
     window::_bind(m);
+
+    draw::_bind(m);
 }

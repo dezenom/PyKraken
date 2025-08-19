@@ -6,7 +6,6 @@
 namespace py = pybind11;
 
 class Rect;
-
 class Vec2;
 
 namespace rect
@@ -34,6 +33,7 @@ class Rect
     Rect(double x, double y, double w, double h);
     Rect(const Vec2& pos, double w, double h);
     Rect(double x, double y, const Vec2& size);
+    ~Rect() = default;
 
     Rect copy() const;
 

@@ -12,7 +12,7 @@ namespace circle
 {
 void _bind(py::module_& module)
 {
-    py::class_<Circle>(module, "Circle", R"doc(
+    py::classh<Circle>(module, "Circle", R"doc(
 Represents a circle shape with position and radius.
 
 Supports collision detection with points, rectangles, other circles, and lines.
@@ -27,7 +27,7 @@ Args:
         )doc")
 
         .def(py::init(
-                 [](const py::sequence& prSeq) -> Circle*
+                 [](const py::sequence& prSeq) -> Circle
                  {
                      if (prSeq.size() != 2)
                          throw std::invalid_argument("Circle expects a 2-element sequence");
@@ -43,8 +43,7 @@ Args:
                      if (posSeq.size() != 2)
                          throw std::invalid_argument("Position must be a 2-element sequence");
 
-                     return new Circle({posSeq[0].cast<double>(), posSeq[1].cast<double>()},
-                                       radius);
+                     return {{posSeq[0].cast<double>(), posSeq[1].cast<double>()}, radius};
                  }),
              R"doc(
 Create a circle from a nested sequence: ([x, y], radius).
@@ -113,43 +112,32 @@ Return the area of the circle.
 Return the circumference of the circle.
         )doc")
 
-        .def(
-            "collide_point",
-            [](const Circle& self, const py::object& pointObj) -> bool
-            {
-                Vec2 point;
-                if (py::isinstance<Vec2>(pointObj))
-                    point = pointObj.cast<Vec2>();
-                else if (py::isinstance<py::sequence>(pointObj))
-                {
-                    const auto pointSeq = pointObj.cast<py::sequence>();
-                    if (pointSeq.size() != 2)
-                        throw std::invalid_argument("2-element sequence expected");
-                    point.x = pointSeq[0].cast<double>();
-                    point.y = pointSeq[1].cast<double>();
-                }
-                else
-                    throw std::invalid_argument("Vec2 or 2-element sequence expected");
-
-                return self.collidePoint(point);
-            },
-            py::arg("point"), R"doc(
+        .def("collide_point", &Circle::collidePoint, py::arg("point"), R"doc(
 Check if a point lies inside the circle.
 
 Args:
-    point (Vec2 or tuple): The point to test.
+    point (Vec2): The point to test.
         )doc")
 
         .def("collide_circle", &Circle::collideCircle, py::arg("circle"), R"doc(
 Check collision with another circle.
+
+Args:
+    circle (Circle): The circle to test.
         )doc")
 
         .def("collide_rect", &Circle::collideRect, py::arg("rect"), R"doc(
 Check collision with a rectangle.
+
+Args:
+    rect (Rect): The rectangle to test.
         )doc")
 
         .def("collide_line", &Circle::collideLine, py::arg("line"), R"doc(
 Check collision with a line.
+
+Args:
+    line (Line): The line to test.
         )doc")
 
         .def(
@@ -205,16 +193,14 @@ bool Circle::collideCircle(const Circle& circle) const
 
 bool Circle::collideRect(const Rect& rect) const
 {
-    const Vec2 closestPos = math::clampVec(pos, rect.getTopLeft(), rect.getBottomRight());
+    auto closestPos = math::clampVec(pos, rect.getTopLeft(), rect.getBottomRight());
     return (pos - closestPos).getLength() <= radius;
 }
 
 bool Circle::collideLine(const Line& line) const
 {
     const Vec2 a = line.getA();
-    const Vec2 b = line.getA();
-
-    const Vec2 ab = b - a;
+    const Vec2 ab = line.getB() - a;
     const Vec2 ac = pos - a;
 
     const double abLengthSquared = ab.getLengthSquared();
@@ -271,7 +257,7 @@ Rect Circle::asRect() const
     return rect;
 }
 
-Circle Circle::copy() const { return Circle(pos, radius); }
+Circle Circle::copy() const { return {pos, radius}; }
 
 bool Circle::operator==(const Circle& other) const
 {

@@ -1,4 +1,5 @@
 #include "Mouse.hpp"
+#include "Camera.hpp"
 #include "Event.hpp"
 #include "Math.hpp"
 #include "Window.hpp"
@@ -84,18 +85,20 @@ Returns:
     )doc");
 }
 
-py::tuple getPos()
+Vec2 getPos()
 {
     float x, y;
     SDL_GetMouseState(&x, &y);
-    return py::make_tuple(x, y);
+    auto pos = Vec2{x, y} / window::getScale();
+    return pos + camera::getActivePos();
 }
 
-py::tuple getRel()
+Vec2 getRel()
 {
     float dx, dy;
     SDL_GetRelativeMouseState(&dx, &dy);
-    return py::make_tuple(dx, dy);
+    float scale = window::getScale();
+    return {dx / scale, dy / scale};
 }
 
 bool isPressed(knMouseButton button)
@@ -110,11 +113,11 @@ bool isJustReleased(knMouseButton button)
     return _mouseReleased[static_cast<size_t>(button) - 1];
 }
 
-void lock() { SDL_SetWindowRelativeMouseMode(window::getWindow(), true); }
+void lock() { SDL_SetWindowRelativeMouseMode(window::get(), true); }
 
-void unlock() { SDL_SetWindowRelativeMouseMode(window::getWindow(), false); }
+void unlock() { SDL_SetWindowRelativeMouseMode(window::get(), false); }
 
-bool isLocked() { return SDL_GetWindowRelativeMouseMode(window::getWindow()); }
+bool isLocked() { return SDL_GetWindowRelativeMouseMode(window::get()); }
 
 void hide() { SDL_HideCursor(); }
 

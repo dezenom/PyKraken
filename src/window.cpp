@@ -1,44 +1,52 @@
 #include "Window.hpp"
 #include "Math.hpp"
+#include "Renderer.hpp"
+#include "Time.hpp"
 
 #include <SDL3/SDL.h>
+#include <SDL3_image/SDL_image.h>
+#include <algorithm>
+#include <cmath>
 #include <stdexcept>
 
 static SDL_Window* _window = nullptr;
 static bool _isOpen = false;
+static int _scale = 1;
 
 namespace window
 {
 void _bind(pybind11::module_& module)
 {
     auto subWindow = module.def_submodule("window", "Window related functions");
-    subWindow.def("create", &window::create, py::arg("title"), py::arg("size"),
+
+    subWindow.def("create", &create, py::arg("title"), py::arg("resolution"),
                   py::arg("scaled") = false, R"doc(
 Create a window with specified title and size.
 
 Args:
     title (str): The window title. Must be non-empty and <= 255 characters.
-    size (Vec2): The window size as (width, height). Ignored if scaled=True.
-    scaled (bool, optional): If True, creates a fullscreen window using the 
-                            display's usable bounds. Defaults to False.
+    resolution (Vec2): The renderer resolution as (width, height).
+    scaled (bool, optional): If True, creates a scaled up window using the 
+                            display's usable bounds, retaining the resolution's ratio.
+                            Defaults to False.
 
 Raises:
     RuntimeError: If a window already exists or window creation fails.
     ValueError: If title is empty, exceeds 255 characters, or size values are <= 0.
     )doc");
-    subWindow.def("is_open", &window::isOpen, R"doc(
+    subWindow.def("is_open", &isOpen, R"doc(
 Check if the window is open.
 
 Returns:
     bool: True if the window is open and active.
     )doc");
-    subWindow.def("close", &window::close, R"doc(
+    subWindow.def("close", &close, R"doc(
 Close the window.
 
 Marks the window as closed, typically used to signal the main loop to exit.
 This doesn't destroy the window immediately but sets the close flag.
     )doc");
-    subWindow.def("set_fullscreen", &window::setFullscreen, py::arg("fullscreen"), R"doc(
+    subWindow.def("set_fullscreen", &setFullscreen, py::arg("fullscreen"), R"doc(
 Set the fullscreen mode of the window.
 
 Args:
@@ -47,7 +55,7 @@ Args:
 Raises:
     RuntimeError: If the window is not initialized.
     )doc");
-    subWindow.def("is_fullscreen", &window::isFullscreen, R"doc(
+    subWindow.def("is_fullscreen", &isFullscreen, R"doc(
 Check if the window is in fullscreen mode.
 
 Returns:
@@ -56,14 +64,8 @@ Returns:
 Raises:
     RuntimeError: If the window is not initialized.
     )doc");
-    subWindow.def(
-        "get_size",
-        []() -> py::tuple
-        {
-            Vec2 winSize = getSize();
-            return py::make_tuple(winSize.x, winSize.y);
-        },
-        R"doc(
+    subWindow.def("get_size", &getSize,
+                  R"doc(
 Get the current size of the window.
 
 Returns:
@@ -72,7 +74,16 @@ Returns:
 Raises:
     RuntimeError: If the window is not initialized.
     )doc");
-    subWindow.def("get_title", &window::getTitle, R"doc(
+    subWindow.def("get_scale", &getScale, R"doc(
+Get the scale of the window relative to the renderer resolution.
+
+Returns:
+    float: The window's scale
+
+Raises:
+    RuntimeError: If the window is not initialized.
+    )doc");
+    subWindow.def("get_title", &getTitle, R"doc(
 Get the current title of the window.
 
 Returns:
@@ -81,7 +92,7 @@ Returns:
 Raises:
     RuntimeError: If the window is not initialized.
     )doc");
-    subWindow.def("set_title", &window::setTitle, py::arg("title"), R"doc(
+    subWindow.def("set_title", &setTitle, py::arg("title"), R"doc(
 Set the title of the window.
 
 Args:
@@ -93,9 +104,9 @@ Raises:
     )doc");
 }
 
-SDL_Window* getWindow() { return _window; }
+SDL_Window* get() { return _window; }
 
-void create(const std::string& title, const Vec2& size, const bool scaled)
+void create(const std::string& title, const Vec2& res, const bool scaled)
 {
     if (_window)
         throw std::runtime_error("Window already created");
@@ -113,16 +124,26 @@ void create(const std::string& title, const Vec2& size, const bool scaled)
         if (!SDL_GetDisplayUsableBounds(SDL_GetPrimaryDisplay(), &usableBounds))
             throw std::runtime_error(SDL_GetError());
 
-        winW = usableBounds.w;
-        winH = usableBounds.h;
+        // Calculate scale factors for both dimensions
+        double scaleX = usableBounds.w / res.x;
+        double scaleY = usableBounds.h / res.y;
+
+        // Use the smaller scale to maintain aspect ratio
+        double minScale = std::min(scaleX, scaleY);
+        _scale = static_cast<int>(minScale);
+        if (fmod(minScale, 1.0) == 0.0)
+            _scale = static_cast<int>(minScale) - 1;
+
+        winW = static_cast<int>(res.x * _scale);
+        winH = static_cast<int>(res.y * _scale);
     }
     else
     {
-        winW = static_cast<int>(size.x);
-        winH = static_cast<int>(size.y);
+        winW = static_cast<int>(res.x);
+        winH = static_cast<int>(res.y);
 
         if (winW <= 0 || winH <= 0)
-            throw std::invalid_argument("Window size values must be greater than 0");
+            throw std::invalid_argument("Window resolution values must be greater than 0");
     }
 
     _window = SDL_CreateWindow(title.c_str(), winW, winH, 0);
@@ -130,9 +151,15 @@ void create(const std::string& title, const Vec2& size, const bool scaled)
         throw std::runtime_error(SDL_GetError());
 
     _isOpen = true;
+
+    renderer::init(_window, res);
 }
 
-bool isOpen() { return _isOpen; }
+bool isOpen()
+{
+    kn::time::_tick();
+    return _isOpen;
+}
 
 void close() { _isOpen = false; }
 
@@ -145,6 +172,14 @@ Vec2 getSize()
     SDL_GetWindowSize(_window, &w, &h);
 
     return {w, h};
+}
+
+float getScale()
+{
+    if (!_window)
+        throw std::runtime_error("Window not initialized");
+
+    return _scale;
 }
 
 void setFullscreen(bool fullscreen)
@@ -191,18 +226,16 @@ std::string getTitle()
 
 void init()
 {
-    if (_window)
-        return;
-
     if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_GAMEPAD))
         throw std::runtime_error(SDL_GetError());
 }
 
 void quit()
 {
+    renderer::quit();
+
     if (_window)
         SDL_DestroyWindow(_window);
-
     _window = nullptr;
 
     SDL_Quit();

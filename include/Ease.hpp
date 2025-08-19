@@ -19,7 +19,7 @@ class EasingAnimation
     EasingAnimation(const Vec2& start, const Vec2& end, double duration, EasingFunction easeFunc);
     ~EasingAnimation() = default;
 
-    Vec2 step(double delta);
+    Vec2 step();
 
     void pause();
 
@@ -77,11 +77,11 @@ double outQuint(double t);
 
 double inOutQuint(double t);
 
-double inSine(double t);
+double inSin(double t);
 
-double outSine(double t);
+double outSin(double t);
 
-double inOutSine(double t);
+double inOutSin(double t);
 
 double inCirc(double t);
 

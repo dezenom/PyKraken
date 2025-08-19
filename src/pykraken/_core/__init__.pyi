@@ -1,6 +1,9 @@
 from __future__ import annotations
+import collections.abc
+import enum
 import typing
 from . import color
+from . import draw
 from . import ease
 from . import event
 from . import gamepad
@@ -10,32 +13,12 @@ from . import line
 from . import math
 from . import mouse
 from . import rect
+from . import renderer
 from . import time
 from . import transform
 from . import window
-__all__ = ['AUDIO_DEVICE_ADDED', 'AUDIO_DEVICE_REMOVED', 'Anchor', 'BOTTOM_LEFT', 'BOTTOM_MID', 'BOTTOM_RIGHT', 'CAMERA_ADDED', 'CAMERA_APPROVED', 'CAMERA_DENIED', 'CAMERA_REMOVED', 'CENTER', 'C_BACK', 'C_DPADDOWN', 'C_DPADLEFT', 'C_DPADRIGHT', 'C_DPADUP', 'C_EAST', 'C_GUIDE', 'C_LEFTSHOULDER', 'C_LEFTSTICK', 'C_LTRIGGER', 'C_LX', 'C_LY', 'C_NORTH', 'C_PS3', 'C_PS4', 'C_PS5', 'C_RIGHTSHOULDER', 'C_RIGHTSTICK', 'C_RTRIGGER', 'C_RX', 'C_RY', 'C_SOUTH', 'C_STANDARD', 'C_START', 'C_SWITCHJOYCONLEFT', 'C_SWITCHJOYCONPAIR', 'C_SWITCHJOYCONRIGHT', 'C_SWITCHPRO', 'C_WEST', 'C_XBOX360', 'C_XBOXONE', 'Camera', 'Circle', 'Clock', 'Color', 'DROP_BEGIN', 'DROP_COMPLETE', 'DROP_FILE', 'DROP_POSITION', 'DROP_TEXT', 'EasingAnimation', 'Event', 'EventType', 'GAMEPAD_ADDED', 'GAMEPAD_AXIS_MOTION', 'GAMEPAD_BUTTON_DOWN', 'GAMEPAD_BUTTON_UP', 'GAMEPAD_REMOVED', 'GAMEPAD_TOUCHPAD_DOWN', 'GAMEPAD_TOUCHPAD_MOTION', 'GAMEPAD_TOUCHPAD_UP', 'GamepadAxis', 'GamepadButton', 'GamepadType', 'InputAction', 'KEYBOARD_ADDED', 'KEYBOARD_REMOVED', 'KEY_DOWN', 'KEY_UP', 'K_0', 'K_1', 'K_2', 'K_3', 'K_4', 'K_5', 'K_6', 'K_7', 'K_8', 'K_9', 'K_AGAIN', 'K_AMPERSAND', 'K_ASTERISK', 'K_AT', 'K_BACKSLASH', 'K_BACKSPACE', 'K_CAPS', 'K_CARET', 'K_COLON', 'K_COMMA', 'K_COPY', 'K_CUT', 'K_DBLQUOTE', 'K_DEL', 'K_DOLLAR', 'K_DOWN', 'K_END', 'K_EQ', 'K_ESC', 'K_EXCLAIM', 'K_F1', 'K_F10', 'K_F11', 'K_F12', 'K_F2', 'K_F3', 'K_F4', 'K_F5', 'K_F6', 'K_F7', 'K_F8', 'K_F9', 'K_FIND', 'K_GRAVE', 'K_GT', 'K_HASH', 'K_HOME', 'K_INS', 'K_KP_0', 'K_KP_1', 'K_KP_2', 'K_KP_3', 'K_KP_4', 'K_KP_5', 'K_KP_6', 'K_KP_7', 'K_KP_8', 'K_KP_9', 'K_KP_DIV', 'K_KP_ENTER', 'K_KP_MINUS', 'K_KP_MULT', 'K_KP_PERIOD', 'K_KP_PLUS', 'K_LALT', 'K_LBRACE', 'K_LBRACKET', 'K_LCTRL', 'K_LEFT', 'K_LGUI', 'K_LPAREN', 'K_LSHIFT', 'K_LT', 'K_MINUS', 'K_MUTE', 'K_NUMLOCK', 'K_PASTE', 'K_PAUSE', 'K_PERCENT', 'K_PERIOD', 'K_PGDOWN', 'K_PGUP', 'K_PIPE', 'K_PLUS', 'K_PRTSCR', 'K_QUESTION', 'K_RALT', 'K_RBRACE', 'K_RBRACKET', 'K_RCTRL', 'K_RETURN', 'K_RGUI', 'K_RIGHT', 'K_RPAREN', 'K_RSHIFT', 'K_SCRLK', 'K_SEMICOLON', 'K_SGLQUOTE', 'K_SLASH', 'K_SPACE', 'K_TAB', 'K_TILDE', 'K_UNDERSCORE', 'K_UNDO', 'K_UP', 'K_VOLDOWN', 'K_VOLUP', 'K_a', 'K_b', 'K_c', 'K_d', 'K_e', 'K_f', 'K_g', 'K_h', 'K_i', 'K_j', 'K_k', 'K_l', 'K_m', 'K_n', 'K_o', 'K_p', 'K_q', 'K_r', 'K_s', 'K_t', 'K_u', 'K_v', 'K_w', 'K_x', 'K_y', 'K_z', 'Keycode', 'Line', 'MID_LEFT', 'MID_RIGHT', 'MOUSE_ADDED', 'MOUSE_BUTTON_DOWN', 'MOUSE_BUTTON_UP', 'MOUSE_MOTION', 'MOUSE_REMOVED', 'MOUSE_WHEEL', 'M_LEFT', 'M_MIDDLE', 'M_RIGHT', 'M_SIDE1', 'M_SIDE2', 'MouseButton', 'PEN_AXIS', 'PEN_BUTTON_DOWN', 'PEN_BUTTON_UP', 'PEN_DOWN', 'PEN_MOTION', 'PEN_PROXIMITY_IN', 'PEN_PROXIMITY_OUT', 'PEN_UP', 'PolarCoordinate', 'QUIT', 'Rect', 'Renderer', 'S_0', 'S_1', 'S_2', 'S_3', 'S_4', 'S_5', 'S_6', 'S_7', 'S_8', 'S_9', 'S_AGAIN', 'S_APOSTROPHE', 'S_BACKSLASH', 'S_BACKSPACE', 'S_CAPS', 'S_COMMA', 'S_COPY', 'S_CUT', 'S_DEL', 'S_DOWN', 'S_END', 'S_EQ', 'S_ESC', 'S_F1', 'S_F10', 'S_F11', 'S_F12', 'S_F2', 'S_F3', 'S_F4', 'S_F5', 'S_F6', 'S_F7', 'S_F8', 'S_F9', 'S_FIND', 'S_GRAVE', 'S_HOME', 'S_INS', 'S_KP_0', 'S_KP_1', 'S_KP_2', 'S_KP_3', 'S_KP_4', 'S_KP_5', 'S_KP_6', 'S_KP_7', 'S_KP_8', 'S_KP_9', 'S_KP_DIV', 'S_KP_ENTER', 'S_KP_MINUS', 'S_KP_MULT', 'S_KP_PERIOD', 'S_KP_PLUS', 'S_LALT', 'S_LBRACKET', 'S_LCTRL', 'S_LEFT', 'S_LGUI', 'S_LSHIFT', 'S_MINUS', 'S_MUTE', 'S_NUMLOCK', 'S_PASTE', 'S_PAUSE', 'S_PERIOD', 'S_PGDOWN', 'S_PGUP', 'S_PRTSCR', 'S_RALT', 'S_RBRACKET', 'S_RCTRL', 'S_RETURN', 'S_RGUI', 'S_RIGHT', 'S_RSHIFT', 'S_SCRLK', 'S_SEMICOLON', 'S_SLASH', 'S_SPACE', 'S_TAB', 'S_UNDO', 'S_UP', 'S_VOLDOWN', 'S_VOLUP', 'S_a', 'S_b', 'S_c', 'S_d', 'S_e', 'S_f', 'S_g', 'S_h', 'S_i', 'S_j', 'S_k', 'S_l', 'S_m', 'S_n', 'S_o', 'S_p', 'S_q', 'S_r', 'S_s', 'S_t', 'S_u', 'S_v', 'S_w', 'S_x', 'S_y', 'S_z', 'Scancode', 'Surface', 'TEXT_EDITING', 'TEXT_INPUT', 'TOP_LEFT', 'TOP_MID', 'TOP_RIGHT', 'Texture', 'Vec2', 'WINDOW_ENTER_FULLSCREEN', 'WINDOW_EXPOSED', 'WINDOW_FOCUS_GAINED', 'WINDOW_FOCUS_LOST', 'WINDOW_HIDDEN', 'WINDOW_LEAVE_FULLSCREEN', 'WINDOW_MAXIMIZED', 'WINDOW_MINIMIZED', 'WINDOW_MOUSE_ENTER', 'WINDOW_MOUSE_LEAVE', 'WINDOW_MOVED', 'WINDOW_OCCLUDED', 'WINDOW_RESIZED', 'WINDOW_RESTORED', 'WINDOW_SHOWN', 'color', 'ease', 'event', 'gamepad', 'init', 'input', 'key', 'line', 'math', 'mouse', 'quit', 'rect', 'time', 'transform', 'window']
-class Anchor:
-    """
-    Members:
-    
-      TOP_LEFT
-    
-      TOP_MID
-    
-      TOP_RIGHT
-    
-      MID_LEFT
-    
-      CENTER
-    
-      MID_RIGHT
-    
-      BOTTOM_LEFT
-    
-      BOTTOM_MID
-    
-      BOTTOM_RIGHT
-    """
+__all__ = ['AUDIO_DEVICE_ADDED', 'AUDIO_DEVICE_REMOVED', 'Anchor', 'BOTTOM_LEFT', 'BOTTOM_MID', 'BOTTOM_RIGHT', 'CAMERA_ADDED', 'CAMERA_APPROVED', 'CAMERA_DENIED', 'CAMERA_REMOVED', 'CENTER', 'C_BACK', 'C_DPAD_DOWN', 'C_DPAD_LEFT', 'C_DPAD_RIGHT', 'C_DPAD_UP', 'C_EAST', 'C_GUIDE', 'C_LSHOULDER', 'C_LSTICK', 'C_LTRIGGER', 'C_LX', 'C_LY', 'C_NORTH', 'C_PS3', 'C_PS4', 'C_PS5', 'C_RSHOULDER', 'C_RSTICK', 'C_RTRIGGER', 'C_RX', 'C_RY', 'C_SOUTH', 'C_STANDARD', 'C_START', 'C_SWITCH_JOYCON_LEFT', 'C_SWITCH_JOYCON_PAIR', 'C_SWITCH_JOYCON_RIGHT', 'C_SWITCH_PRO', 'C_WEST', 'C_XBOX_360', 'C_XBOX_ONE', 'Camera', 'Circle', 'Color', 'DROP_BEGIN', 'DROP_COMPLETE', 'DROP_FILE', 'DROP_POSITION', 'DROP_TEXT', 'EasingAnimation', 'Event', 'EventType', 'GAMEPAD_ADDED', 'GAMEPAD_AXIS_MOTION', 'GAMEPAD_BUTTON_DOWN', 'GAMEPAD_BUTTON_UP', 'GAMEPAD_REMOVED', 'GAMEPAD_TOUCHPAD_DOWN', 'GAMEPAD_TOUCHPAD_MOTION', 'GAMEPAD_TOUCHPAD_UP', 'GamepadAxis', 'GamepadButton', 'GamepadType', 'InputAction', 'KEYBOARD_ADDED', 'KEYBOARD_REMOVED', 'KEY_DOWN', 'KEY_UP', 'K_0', 'K_1', 'K_2', 'K_3', 'K_4', 'K_5', 'K_6', 'K_7', 'K_8', 'K_9', 'K_AGAIN', 'K_AMPERSAND', 'K_ASTERISK', 'K_AT', 'K_BACKSLASH', 'K_BACKSPACE', 'K_CAPS', 'K_CARET', 'K_COLON', 'K_COMMA', 'K_COPY', 'K_CUT', 'K_DBLQUOTE', 'K_DEL', 'K_DOLLAR', 'K_DOWN', 'K_END', 'K_EQ', 'K_ESC', 'K_EXCLAIM', 'K_F1', 'K_F10', 'K_F11', 'K_F12', 'K_F2', 'K_F3', 'K_F4', 'K_F5', 'K_F6', 'K_F7', 'K_F8', 'K_F9', 'K_FIND', 'K_GRAVE', 'K_GT', 'K_HASH', 'K_HOME', 'K_INS', 'K_KP_0', 'K_KP_1', 'K_KP_2', 'K_KP_3', 'K_KP_4', 'K_KP_5', 'K_KP_6', 'K_KP_7', 'K_KP_8', 'K_KP_9', 'K_KP_DIV', 'K_KP_ENTER', 'K_KP_MINUS', 'K_KP_MULT', 'K_KP_PERIOD', 'K_KP_PLUS', 'K_LALT', 'K_LBRACE', 'K_LBRACKET', 'K_LCTRL', 'K_LEFT', 'K_LGUI', 'K_LPAREN', 'K_LSHIFT', 'K_LT', 'K_MINUS', 'K_MUTE', 'K_NUMLOCK', 'K_PASTE', 'K_PAUSE', 'K_PERCENT', 'K_PERIOD', 'K_PGDOWN', 'K_PGUP', 'K_PIPE', 'K_PLUS', 'K_PRTSCR', 'K_QUESTION', 'K_RALT', 'K_RBRACE', 'K_RBRACKET', 'K_RCTRL', 'K_RETURN', 'K_RGUI', 'K_RIGHT', 'K_RPAREN', 'K_RSHIFT', 'K_SCRLK', 'K_SEMICOLON', 'K_SGLQUOTE', 'K_SLASH', 'K_SPACE', 'K_TAB', 'K_TILDE', 'K_UNDERSCORE', 'K_UNDO', 'K_UP', 'K_VOLDOWN', 'K_VOLUP', 'K_a', 'K_b', 'K_c', 'K_d', 'K_e', 'K_f', 'K_g', 'K_h', 'K_i', 'K_j', 'K_k', 'K_l', 'K_m', 'K_n', 'K_o', 'K_p', 'K_q', 'K_r', 'K_s', 'K_t', 'K_u', 'K_v', 'K_w', 'K_x', 'K_y', 'K_z', 'Keycode', 'Line', 'MID_LEFT', 'MID_RIGHT', 'MOUSE_ADDED', 'MOUSE_BUTTON_DOWN', 'MOUSE_BUTTON_UP', 'MOUSE_MOTION', 'MOUSE_REMOVED', 'MOUSE_WHEEL', 'M_LEFT', 'M_MIDDLE', 'M_RIGHT', 'M_SIDE1', 'M_SIDE2', 'MouseButton', 'PEN_AXIS', 'PEN_BUTTON_DOWN', 'PEN_BUTTON_UP', 'PEN_DOWN', 'PEN_MOTION', 'PEN_PROXIMITY_IN', 'PEN_PROXIMITY_OUT', 'PEN_UP', 'PixelArray', 'PolarCoordinate', 'Polygon', 'QUIT', 'Rect', 'S_0', 'S_1', 'S_2', 'S_3', 'S_4', 'S_5', 'S_6', 'S_7', 'S_8', 'S_9', 'S_AGAIN', 'S_APOSTROPHE', 'S_BACKSLASH', 'S_BACKSPACE', 'S_CAPS', 'S_COMMA', 'S_COPY', 'S_CUT', 'S_DEL', 'S_DOWN', 'S_END', 'S_EQ', 'S_ESC', 'S_F1', 'S_F10', 'S_F11', 'S_F12', 'S_F2', 'S_F3', 'S_F4', 'S_F5', 'S_F6', 'S_F7', 'S_F8', 'S_F9', 'S_FIND', 'S_GRAVE', 'S_HOME', 'S_INS', 'S_KP_0', 'S_KP_1', 'S_KP_2', 'S_KP_3', 'S_KP_4', 'S_KP_5', 'S_KP_6', 'S_KP_7', 'S_KP_8', 'S_KP_9', 'S_KP_DIV', 'S_KP_ENTER', 'S_KP_MINUS', 'S_KP_MULT', 'S_KP_PERIOD', 'S_KP_PLUS', 'S_LALT', 'S_LBRACKET', 'S_LCTRL', 'S_LEFT', 'S_LGUI', 'S_LSHIFT', 'S_MINUS', 'S_MUTE', 'S_NUMLOCK', 'S_PASTE', 'S_PAUSE', 'S_PERIOD', 'S_PGDOWN', 'S_PGUP', 'S_PRTSCR', 'S_RALT', 'S_RBRACKET', 'S_RCTRL', 'S_RETURN', 'S_RGUI', 'S_RIGHT', 'S_RSHIFT', 'S_SCRLK', 'S_SEMICOLON', 'S_SLASH', 'S_SPACE', 'S_TAB', 'S_UNDO', 'S_UP', 'S_VOLDOWN', 'S_VOLUP', 'S_a', 'S_b', 'S_c', 'S_d', 'S_e', 'S_f', 'S_g', 'S_h', 'S_i', 'S_j', 'S_k', 'S_l', 'S_m', 'S_n', 'S_o', 'S_p', 'S_q', 'S_r', 'S_s', 'S_t', 'S_u', 'S_v', 'S_w', 'S_x', 'S_y', 'S_z', 'Scancode', 'TEXT_EDITING', 'TEXT_INPUT', 'TOP_LEFT', 'TOP_MID', 'TOP_RIGHT', 'Texture', 'Timer', 'Vec2', 'WINDOW_ENTER_FULLSCREEN', 'WINDOW_EXPOSED', 'WINDOW_FOCUS_GAINED', 'WINDOW_FOCUS_LOST', 'WINDOW_HIDDEN', 'WINDOW_LEAVE_FULLSCREEN', 'WINDOW_MAXIMIZED', 'WINDOW_MINIMIZED', 'WINDOW_MOUSE_ENTER', 'WINDOW_MOUSE_LEAVE', 'WINDOW_MOVED', 'WINDOW_OCCLUDED', 'WINDOW_RESIZED', 'WINDOW_RESTORED', 'WINDOW_SHOWN', 'color', 'draw', 'ease', 'event', 'gamepad', 'init', 'input', 'key', 'line', 'math', 'mouse', 'quit', 'rect', 'renderer', 'time', 'transform', 'window']
+class Anchor(enum.IntEnum):
     BOTTOM_LEFT: typing.ClassVar[Anchor]  # value = <Anchor.BOTTOM_LEFT: 6>
     BOTTOM_MID: typing.ClassVar[Anchor]  # value = <Anchor.BOTTOM_MID: 7>
     BOTTOM_RIGHT: typing.ClassVar[Anchor]  # value = <Anchor.BOTTOM_RIGHT: 8>
@@ -45,41 +28,13 @@ class Anchor:
     TOP_LEFT: typing.ClassVar[Anchor]  # value = <Anchor.TOP_LEFT: 0>
     TOP_MID: typing.ClassVar[Anchor]  # value = <Anchor.TOP_MID: 1>
     TOP_RIGHT: typing.ClassVar[Anchor]  # value = <Anchor.TOP_RIGHT: 2>
-    __members__: typing.ClassVar[dict[str, Anchor]]  # value = {'TOP_LEFT': <Anchor.TOP_LEFT: 0>, 'TOP_MID': <Anchor.TOP_MID: 1>, 'TOP_RIGHT': <Anchor.TOP_RIGHT: 2>, 'MID_LEFT': <Anchor.MID_LEFT: 3>, 'CENTER': <Anchor.CENTER: 4>, 'MID_RIGHT': <Anchor.MID_RIGHT: 5>, 'BOTTOM_LEFT': <Anchor.BOTTOM_LEFT: 6>, 'BOTTOM_MID': <Anchor.BOTTOM_MID: 7>, 'BOTTOM_RIGHT': <Anchor.BOTTOM_RIGHT: 8>}
-    def __eq__(self, other: typing.Any) -> bool:
+    @classmethod
+    def __new__(cls, value):
         ...
-    def __ge__(self, other: typing.Any) -> bool:
-        ...
-    def __getstate__(self) -> int:
-        ...
-    def __gt__(self, other: typing.Any) -> bool:
-        ...
-    def __hash__(self) -> int:
-        ...
-    def __index__(self) -> int:
-        ...
-    def __init__(self, value: int) -> None:
-        ...
-    def __int__(self) -> int:
-        ...
-    def __le__(self, other: typing.Any) -> bool:
-        ...
-    def __lt__(self, other: typing.Any) -> bool:
-        ...
-    def __ne__(self, other: typing.Any) -> bool:
-        ...
-    def __repr__(self) -> str:
-        ...
-    def __setstate__(self, state: int) -> None:
-        ...
-    def __str__(self) -> str:
-        ...
-    @property
-    def name(self) -> str:
-        ...
-    @property
-    def value(self) -> int:
-        ...
+    def __format__(self, format_spec):
+        """
+        Convert to a string according to format_spec.
+        """
 class Camera:
     """
     
@@ -88,12 +43,30 @@ class Camera:
     Controls the viewport's translation, allowing you to move the view of the world.
         
     """
-    def __init__(self, pos: Vec2 = ...) -> None:
+    @typing.overload
+    def __init__(self) -> None:
+        """
+        Create a camera at the default position (0, 0).
+        
+        Returns:
+            Camera: A new camera instance.
+        """
+    @typing.overload
+    def __init__(self, pos: Vec2) -> None:
         """
         Create a camera at the given position.
         
         Args:
-            pos (Vec2, optional): The camera's initial position. Default set to (0, 0).
+            pos (Vec2): The camera's initial position.
+        """
+    @typing.overload
+    def __init__(self, x: typing.SupportsFloat, y: typing.SupportsFloat) -> None:
+        """
+        Create a camera at the given position.
+        
+        Args:
+            x (float): The x-coordinate of the camera's initial position.
+            y (float): The y-coordinate of the camera's initial position.
         """
     def set(self) -> None:
         """
@@ -127,12 +100,12 @@ class Circle:
         """
         Check if two circles are equal.
         """
-    def __getitem__(self, index: int) -> float:
+    def __getitem__(self, index: typing.SupportsInt) -> float:
         """
         Get component by index: 0 = x, 1 = y, 2 = radius.
         """
     @typing.overload
-    def __init__(self, pos: Vec2, radius: float) -> None:
+    def __init__(self, pos: Vec2, radius: typing.SupportsFloat) -> None:
         """
         Create a circle at a given position and radius.
         
@@ -141,11 +114,11 @@ class Circle:
             radius (float): Radius of the circle.
         """
     @typing.overload
-    def __init__(self, arg0: typing.Sequence) -> None:
+    def __init__(self, arg0: collections.abc.Sequence) -> None:
         """
         Create a circle from a nested sequence: ([x, y], radius).
         """
-    def __iter__(self) -> typing.Iterator:
+    def __iter__(self) -> collections.abc.Iterator:
         """
         Return an iterator over (x, y, radius).
         """
@@ -164,21 +137,30 @@ class Circle:
     def collide_circle(self, circle: Circle) -> bool:
         """
         Check collision with another circle.
+        
+        Args:
+            circle (Circle): The circle to test.
         """
     def collide_line(self, line: Line) -> bool:
         """
         Check collision with a line.
+        
+        Args:
+            line (Line): The line to test.
         """
-    def collide_point(self, point: typing.Any) -> bool:
+    def collide_point(self, point: Vec2) -> bool:
         """
         Check if a point lies inside the circle.
         
         Args:
-            point (Vec2 or tuple): The point to test.
+            point (Vec2): The point to test.
         """
     def collide_rect(self, rect: Rect) -> bool:
         """
         Check collision with a rectangle.
+        
+        Args:
+            rect (Rect): The rectangle to test.
         """
     def contains(self, shape: typing.Any) -> bool:
         """
@@ -215,46 +197,8 @@ class Circle:
         The radius of the circle.
         """
     @radius.setter
-    def radius(self, arg0: float) -> None:
+    def radius(self, arg0: typing.SupportsFloat) -> None:
         ...
-class Clock:
-    """
-    
-    A clock for tracking frame time and controlling framerate.
-    
-    The Clock class is used to measure time between frames and optionally
-    limit the framerate of your application. It's essential for creating
-    smooth, frame-rate independent animations and game loops.
-        
-    """
-    def __init__(self) -> None:
-        """
-        Create a new Clock instance.
-        
-        The clock starts measuring time immediately upon creation.
-        """
-    def get_fps(self) -> int:
-        """
-        Get the current frames per second of the program.
-        
-        Returns:
-            int: The current FPS based on the last frame time.
-        """
-    def tick(self, frame_rate: int = 0) -> float:
-        """
-        Get the time since the last frame and optionally cap the framerate.
-        
-        This method should be called once per frame in your main loop. It returns
-        the time elapsed since the last call to tick(), which can be used for
-        frame-rate independent animations.
-        
-        Args:
-            frame_rate (int, optional): Maximum framerate to enforce. If 0, no limit is applied.
-                                       Defaults to 0 (unlimited).
-        
-        Returns:
-            float: The time elapsed since the last tick() call, in seconds.
-        """
 class Color:
     """
     
@@ -263,9 +207,18 @@ class Color:
     Each channel (r, g, b, a) is an 8-bit unsigned integer.
         
     """
-    def __getitem__(self, index: int) -> int:
+    def __getitem__(self, index: typing.SupportsInt) -> int:
         """
-        Access color channels by index (0=r, 1=g, 2=b, 3=a).
+        Access color channels by index.
+        
+        Args:
+            index (int): Channel index (0=r, 1=g, 2=b, 3=a).
+        
+        Returns:
+            int: Channel value (0-255).
+        
+        Raises:
+            IndexError: If index is not in range [0, 3].
         """
     @typing.overload
     def __init__(self) -> None:
@@ -273,7 +226,7 @@ class Color:
         Create a Color with default values (0, 0, 0, 255).
         """
     @typing.overload
-    def __init__(self, r: int, g: int, b: int, a: int = 255) -> None:
+    def __init__(self, r: typing.SupportsInt, g: typing.SupportsInt, b: typing.SupportsInt, a: typing.SupportsInt = 255) -> None:
         """
         Create a Color from RGBA components.
         
@@ -293,65 +246,130 @@ class Color:
             Color([255, 0, 255])
             Color((255, 0, 255, 128))
         """
-    def __iter__(self) -> typing.Iterator:
+    def __iter__(self) -> collections.abc.Iterator:
         """
-        Return an iterator over (r, g, b, a).
+        Return an iterator over color channels.
+        
+        Yields:
+            int: The r, g, b, a values in that order (0-255 each).
+        
+        Example:
+            for channel in color:
+                print(channel)  # Prints r, g, b, a values
         """
     def __len__(self) -> int:
         """
-        Return the number of channels (always 4).
+        Return the number of color channels.
+        
+        Returns:
+            int: Always returns 4 (for r, g, b, a channels).
         """
     def __repr__(self) -> str:
         """
         Return a string suitable for debugging and recreation.
+        
+        Returns:
+            str: String in format "Color(r, g, b, a)" that can recreate the object.
         """
-    def __setitem__(self, index: int, value: int) -> None:
+    def __setitem__(self, index: typing.SupportsInt, value: typing.SupportsInt) -> None:
         """
         Set a color channel by index.
+        
+        Args:
+            index (int): Channel index (0=r, 1=g, 2=b, 3=a).
+            value (int): New channel value (0-255).
+        
+        Raises:
+            IndexError: If index is not in range [0, 3].
         """
     def __str__(self) -> str:
         """
         Return a human-readable string representation.
+        
+        Returns:
+            str: String in format "(r, g, b, a)" with integer values.
         """
     @property
     def a(self) -> int:
         """
-        Alpha channel (0-255).
+        Alpha (transparency) channel value.
+        
+        Type: int
+        Range: 0-255 (8-bit unsigned integer)
+        Note: 0 = fully transparent, 255 = fully opaque
         """
     @a.setter
-    def a(self, arg0: int) -> None:
+    def a(self, arg0: typing.SupportsInt) -> None:
         ...
     @property
     def b(self) -> int:
         """
-        Blue channel (0-255).
+        Blue channel value.
+        
+        Type: int
+        Range: 0-255 (8-bit unsigned integer)
         """
     @b.setter
-    def b(self, arg0: int) -> None:
+    def b(self, arg0: typing.SupportsInt) -> None:
         ...
     @property
     def g(self) -> int:
         """
-        Green channel (0-255).
+        Green channel value.
+        
+        Type: int
+        Range: 0-255 (8-bit unsigned integer)
         """
     @g.setter
-    def g(self, arg0: int) -> None:
+    def g(self, arg0: typing.SupportsInt) -> None:
         ...
     @property
     def hex(self) -> str:
         """
-        Get or set the color as a hex string (e.g. "#FF00FF" or "#FF00FF80").
+        Get or set the color as a hex string.
+        
+        When getting, returns an 8-digit hex string in the format "#RRGGBBAA".
+        When setting, accepts various hex formats (see from_hex for details).
+        
+        Example:
+            color.hex = "#FF00FF"     # Set to magenta
+            print(color.hex)          # Returns "#FF00FFFF"
         """
     @hex.setter
     def hex(self, arg1: str) -> None:
         ...
     @property
+    def hsv(self) -> tuple:
+        """
+        Get or set the color as an HSV tuple.
+        
+        When getting, returns a tuple of (hue, saturation, value, alpha).
+        When setting, accepts a tuple of 3 or 4 values.
+        
+        Values:
+            hue (float): Hue angle in degrees (0-360)
+            saturation (float): Saturation level (0-1)
+            value (float): Brightness/value level (0-1)
+            alpha (float): Alpha transparency (0-1), optional
+        
+        Example:
+            color.hsv = (120, 1.0, 1.0)        # Pure green
+            color.hsv = (240, 0.5, 0.8, 0.9)   # Light blue with transparency
+            h, s, v, a = color.hsv              # Get HSV values
+        """
+    @hsv.setter
+    def hsv(self, arg1: collections.abc.Sequence) -> None:
+        ...
+    @property
     def r(self) -> int:
         """
-        Red channel (0-255).
+        Red channel value.
+        
+        Type: int
+        Range: 0-255 (8-bit unsigned integer)
         """
     @r.setter
-    def r(self, arg0: int) -> None:
+    def r(self, arg0: typing.SupportsInt) -> None:
         ...
 class EasingAnimation:
     """
@@ -361,7 +379,7 @@ class EasingAnimation:
     This class supports pausing, resuming, reversing, and checking progress.
         
     """
-    def __init__(self, start: Vec2, end: Vec2, duration: float, easeFunc: typing.Callable[[float], float]) -> None:
+    def __init__(self, start: Vec2, end: Vec2, duration: typing.SupportsFloat, easeFunc: collections.abc.Callable[[typing.SupportsFloat], float]) -> None:
         """
         Create an EasingAnimation.
         
@@ -387,12 +405,10 @@ class EasingAnimation:
         """
         Reverse the direction of the animation.
         """
-    def step(self, delta: float) -> Vec2:
+    def step(self) -> Vec2:
         """
-        Advance the animation by delta time and return the current position.
+        Advance the animation get its current position.
         
-        Args:
-            delta (float): Time step to progress the animation.
         Returns:
             Vec2: Interpolated position.
         """
@@ -427,120 +443,7 @@ class Event:
         """
         The event type (e.g., KEY_DOWN, MOUSE_BUTTON_UP).
         """
-class EventType:
-    """
-    Members:
-    
-      QUIT
-    
-      WINDOW_SHOWN
-    
-      WINDOW_HIDDEN
-    
-      WINDOW_EXPOSED
-    
-      WINDOW_MOVED
-    
-      WINDOW_RESIZED
-    
-      WINDOW_MINIMIZED
-    
-      WINDOW_MAXIMIZED
-    
-      WINDOW_RESTORED
-    
-      WINDOW_MOUSE_ENTER
-    
-      WINDOW_MOUSE_LEAVE
-    
-      WINDOW_FOCUS_GAINED
-    
-      WINDOW_FOCUS_LOST
-    
-      WINDOW_OCCLUDED
-    
-      WINDOW_ENTER_FULLSCREEN
-    
-      WINDOW_LEAVE_FULLSCREEN
-    
-      KEY_DOWN
-    
-      KEY_UP
-    
-      TEXT_EDITING
-    
-      TEXT_INPUT
-    
-      KEYBOARD_ADDED
-    
-      KEYBOARD_REMOVED
-    
-      MOUSE_MOTION
-    
-      MOUSE_BUTTON_DOWN
-    
-      MOUSE_BUTTON_UP
-    
-      MOUSE_WHEEL
-    
-      MOUSE_ADDED
-    
-      MOUSE_REMOVED
-    
-      GAMEPAD_AXIS_MOTION
-    
-      GAMEPAD_BUTTON_DOWN
-    
-      GAMEPAD_BUTTON_UP
-    
-      GAMEPAD_ADDED
-    
-      GAMEPAD_REMOVED
-    
-      GAMEPAD_TOUCHPAD_DOWN
-    
-      GAMEPAD_TOUCHPAD_MOTION
-    
-      GAMEPAD_TOUCHPAD_UP
-    
-      DROP_FILE
-    
-      DROP_TEXT
-    
-      DROP_BEGIN
-    
-      DROP_COMPLETE
-    
-      DROP_POSITION
-    
-      AUDIO_DEVICE_ADDED
-    
-      AUDIO_DEVICE_REMOVED
-    
-      PEN_PROXIMITY_IN
-    
-      PEN_PROXIMITY_OUT
-    
-      PEN_DOWN
-    
-      PEN_UP
-    
-      PEN_BUTTON_DOWN
-    
-      PEN_BUTTON_UP
-    
-      PEN_MOTION
-    
-      PEN_AXIS
-    
-      CAMERA_ADDED
-    
-      CAMERA_REMOVED
-    
-      CAMERA_APPROVED
-    
-      CAMERA_DENIED
-    """
+class EventType(enum.IntEnum):
     AUDIO_DEVICE_ADDED: typing.ClassVar[EventType]  # value = <EventType.AUDIO_DEVICE_ADDED: 4352>
     AUDIO_DEVICE_REMOVED: typing.ClassVar[EventType]  # value = <EventType.AUDIO_DEVICE_REMOVED: 4353>
     CAMERA_ADDED: typing.ClassVar[EventType]  # value = <EventType.CAMERA_ADDED: 5120>
@@ -596,307 +499,68 @@ class EventType:
     WINDOW_RESIZED: typing.ClassVar[EventType]  # value = <EventType.WINDOW_RESIZED: 518>
     WINDOW_RESTORED: typing.ClassVar[EventType]  # value = <EventType.WINDOW_RESTORED: 523>
     WINDOW_SHOWN: typing.ClassVar[EventType]  # value = <EventType.WINDOW_SHOWN: 514>
-    __members__: typing.ClassVar[dict[str, EventType]]  # value = {'QUIT': <EventType.QUIT: 256>, 'WINDOW_SHOWN': <EventType.WINDOW_SHOWN: 514>, 'WINDOW_HIDDEN': <EventType.WINDOW_HIDDEN: 515>, 'WINDOW_EXPOSED': <EventType.WINDOW_EXPOSED: 516>, 'WINDOW_MOVED': <EventType.WINDOW_MOVED: 517>, 'WINDOW_RESIZED': <EventType.WINDOW_RESIZED: 518>, 'WINDOW_MINIMIZED': <EventType.WINDOW_MINIMIZED: 521>, 'WINDOW_MAXIMIZED': <EventType.WINDOW_MAXIMIZED: 522>, 'WINDOW_RESTORED': <EventType.WINDOW_RESTORED: 523>, 'WINDOW_MOUSE_ENTER': <EventType.WINDOW_MOUSE_ENTER: 524>, 'WINDOW_MOUSE_LEAVE': <EventType.WINDOW_MOUSE_LEAVE: 525>, 'WINDOW_FOCUS_GAINED': <EventType.WINDOW_FOCUS_GAINED: 526>, 'WINDOW_FOCUS_LOST': <EventType.WINDOW_FOCUS_LOST: 527>, 'WINDOW_OCCLUDED': <EventType.WINDOW_OCCLUDED: 534>, 'WINDOW_ENTER_FULLSCREEN': <EventType.WINDOW_ENTER_FULLSCREEN: 535>, 'WINDOW_LEAVE_FULLSCREEN': <EventType.WINDOW_LEAVE_FULLSCREEN: 536>, 'KEY_DOWN': <EventType.KEY_DOWN: 768>, 'KEY_UP': <EventType.KEY_UP: 769>, 'TEXT_EDITING': <EventType.TEXT_EDITING: 770>, 'TEXT_INPUT': <EventType.TEXT_INPUT: 771>, 'KEYBOARD_ADDED': <EventType.KEYBOARD_ADDED: 773>, 'KEYBOARD_REMOVED': <EventType.KEYBOARD_REMOVED: 774>, 'MOUSE_MOTION': <EventType.MOUSE_MOTION: 1024>, 'MOUSE_BUTTON_DOWN': <EventType.MOUSE_BUTTON_DOWN: 1025>, 'MOUSE_BUTTON_UP': <EventType.MOUSE_BUTTON_UP: 1026>, 'MOUSE_WHEEL': <EventType.MOUSE_WHEEL: 1027>, 'MOUSE_ADDED': <EventType.MOUSE_ADDED: 1028>, 'MOUSE_REMOVED': <EventType.MOUSE_REMOVED: 1029>, 'GAMEPAD_AXIS_MOTION': <EventType.GAMEPAD_AXIS_MOTION: 1616>, 'GAMEPAD_BUTTON_DOWN': <EventType.GAMEPAD_BUTTON_DOWN: 1617>, 'GAMEPAD_BUTTON_UP': <EventType.GAMEPAD_BUTTON_UP: 1618>, 'GAMEPAD_ADDED': <EventType.GAMEPAD_ADDED: 1619>, 'GAMEPAD_REMOVED': <EventType.GAMEPAD_REMOVED: 1620>, 'GAMEPAD_TOUCHPAD_DOWN': <EventType.GAMEPAD_TOUCHPAD_DOWN: 1622>, 'GAMEPAD_TOUCHPAD_MOTION': <EventType.GAMEPAD_TOUCHPAD_MOTION: 1623>, 'GAMEPAD_TOUCHPAD_UP': <EventType.GAMEPAD_TOUCHPAD_UP: 1624>, 'DROP_FILE': <EventType.DROP_FILE: 4096>, 'DROP_TEXT': <EventType.DROP_TEXT: 4097>, 'DROP_BEGIN': <EventType.DROP_BEGIN: 4098>, 'DROP_COMPLETE': <EventType.DROP_COMPLETE: 4099>, 'DROP_POSITION': <EventType.DROP_POSITION: 4100>, 'AUDIO_DEVICE_ADDED': <EventType.AUDIO_DEVICE_ADDED: 4352>, 'AUDIO_DEVICE_REMOVED': <EventType.AUDIO_DEVICE_REMOVED: 4353>, 'PEN_PROXIMITY_IN': <EventType.PEN_PROXIMITY_IN: 4864>, 'PEN_PROXIMITY_OUT': <EventType.PEN_PROXIMITY_OUT: 4865>, 'PEN_DOWN': <EventType.PEN_DOWN: 4866>, 'PEN_UP': <EventType.PEN_UP: 4867>, 'PEN_BUTTON_DOWN': <EventType.PEN_BUTTON_DOWN: 4868>, 'PEN_BUTTON_UP': <EventType.PEN_BUTTON_UP: 4869>, 'PEN_MOTION': <EventType.PEN_MOTION: 4870>, 'PEN_AXIS': <EventType.PEN_AXIS: 4871>, 'CAMERA_ADDED': <EventType.CAMERA_ADDED: 5120>, 'CAMERA_REMOVED': <EventType.CAMERA_REMOVED: 5121>, 'CAMERA_APPROVED': <EventType.CAMERA_APPROVED: 5122>, 'CAMERA_DENIED': <EventType.CAMERA_DENIED: 5123>}
-    def __and__(self, other: typing.Any) -> typing.Any:
+    @classmethod
+    def __new__(cls, value):
         ...
-    def __eq__(self, other: typing.Any) -> bool:
-        ...
-    def __ge__(self, other: typing.Any) -> bool:
-        ...
-    def __getstate__(self) -> int:
-        ...
-    def __gt__(self, other: typing.Any) -> bool:
-        ...
-    def __hash__(self) -> int:
-        ...
-    def __index__(self) -> int:
-        ...
-    def __init__(self, value: int) -> None:
-        ...
-    def __int__(self) -> int:
-        ...
-    def __invert__(self) -> typing.Any:
-        ...
-    def __le__(self, other: typing.Any) -> bool:
-        ...
-    def __lt__(self, other: typing.Any) -> bool:
-        ...
-    def __ne__(self, other: typing.Any) -> bool:
-        ...
-    def __or__(self, other: typing.Any) -> typing.Any:
-        ...
-    def __rand__(self, other: typing.Any) -> typing.Any:
-        ...
-    def __repr__(self) -> str:
-        ...
-    def __ror__(self, other: typing.Any) -> typing.Any:
-        ...
-    def __rxor__(self, other: typing.Any) -> typing.Any:
-        ...
-    def __setstate__(self, state: int) -> None:
-        ...
-    def __str__(self) -> str:
-        ...
-    def __xor__(self, other: typing.Any) -> typing.Any:
-        ...
-    @property
-    def name(self) -> str:
-        ...
-    @property
-    def value(self) -> int:
-        ...
-class GamepadAxis:
-    """
-    Members:
-    
-      C_LX
-    
-      C_LY
-    
-      C_RX
-    
-      C_RY
-    
-      C_LTRIGGER
-    
-      C_RTRIGGER
-    """
+    def __format__(self, format_spec):
+        """
+        Convert to a string according to format_spec.
+        """
+class GamepadAxis(enum.IntEnum):
     C_LTRIGGER: typing.ClassVar[GamepadAxis]  # value = <GamepadAxis.C_LTRIGGER: 4>
     C_LX: typing.ClassVar[GamepadAxis]  # value = <GamepadAxis.C_LX: 0>
     C_LY: typing.ClassVar[GamepadAxis]  # value = <GamepadAxis.C_LY: 1>
     C_RTRIGGER: typing.ClassVar[GamepadAxis]  # value = <GamepadAxis.C_RTRIGGER: 5>
     C_RX: typing.ClassVar[GamepadAxis]  # value = <GamepadAxis.C_RX: 2>
     C_RY: typing.ClassVar[GamepadAxis]  # value = <GamepadAxis.C_RY: 3>
-    __members__: typing.ClassVar[dict[str, GamepadAxis]]  # value = {'C_LX': <GamepadAxis.C_LX: 0>, 'C_LY': <GamepadAxis.C_LY: 1>, 'C_RX': <GamepadAxis.C_RX: 2>, 'C_RY': <GamepadAxis.C_RY: 3>, 'C_LTRIGGER': <GamepadAxis.C_LTRIGGER: 4>, 'C_RTRIGGER': <GamepadAxis.C_RTRIGGER: 5>}
-    def __and__(self, other: typing.Any) -> typing.Any:
+    @classmethod
+    def __new__(cls, value):
         ...
-    def __eq__(self, other: typing.Any) -> bool:
-        ...
-    def __ge__(self, other: typing.Any) -> bool:
-        ...
-    def __getstate__(self) -> int:
-        ...
-    def __gt__(self, other: typing.Any) -> bool:
-        ...
-    def __hash__(self) -> int:
-        ...
-    def __index__(self) -> int:
-        ...
-    def __init__(self, value: int) -> None:
-        ...
-    def __int__(self) -> int:
-        ...
-    def __invert__(self) -> typing.Any:
-        ...
-    def __le__(self, other: typing.Any) -> bool:
-        ...
-    def __lt__(self, other: typing.Any) -> bool:
-        ...
-    def __ne__(self, other: typing.Any) -> bool:
-        ...
-    def __or__(self, other: typing.Any) -> typing.Any:
-        ...
-    def __rand__(self, other: typing.Any) -> typing.Any:
-        ...
-    def __repr__(self) -> str:
-        ...
-    def __ror__(self, other: typing.Any) -> typing.Any:
-        ...
-    def __rxor__(self, other: typing.Any) -> typing.Any:
-        ...
-    def __setstate__(self, state: int) -> None:
-        ...
-    def __str__(self) -> str:
-        ...
-    def __xor__(self, other: typing.Any) -> typing.Any:
-        ...
-    @property
-    def name(self) -> str:
-        ...
-    @property
-    def value(self) -> int:
-        ...
-class GamepadButton:
-    """
-    Members:
-    
-      C_SOUTH
-    
-      C_EAST
-    
-      C_WEST
-    
-      C_NORTH
-    
-      C_BACK
-    
-      C_GUIDE
-    
-      C_START
-    
-      C_LEFTSTICK
-    
-      C_RIGHTSTICK
-    
-      C_LEFTSHOULDER
-    
-      C_RIGHTSHOULDER
-    
-      C_DPADUP
-    
-      C_DPADDOWN
-    
-      C_DPADLEFT
-    
-      C_DPADRIGHT
-    """
+    def __format__(self, format_spec):
+        """
+        Convert to a string according to format_spec.
+        """
+class GamepadButton(enum.IntEnum):
     C_BACK: typing.ClassVar[GamepadButton]  # value = <GamepadButton.C_BACK: 4>
-    C_DPADDOWN: typing.ClassVar[GamepadButton]  # value = <GamepadButton.C_DPADDOWN: 12>
-    C_DPADLEFT: typing.ClassVar[GamepadButton]  # value = <GamepadButton.C_DPADLEFT: 13>
-    C_DPADRIGHT: typing.ClassVar[GamepadButton]  # value = <GamepadButton.C_DPADRIGHT: 14>
-    C_DPADUP: typing.ClassVar[GamepadButton]  # value = <GamepadButton.C_DPADUP: 11>
+    C_DPAD_DOWN: typing.ClassVar[GamepadButton]  # value = <GamepadButton.C_DPAD_DOWN: 12>
+    C_DPAD_LEFT: typing.ClassVar[GamepadButton]  # value = <GamepadButton.C_DPAD_LEFT: 13>
+    C_DPAD_RIGHT: typing.ClassVar[GamepadButton]  # value = <GamepadButton.C_DPAD_RIGHT: 14>
+    C_DPAD_UP: typing.ClassVar[GamepadButton]  # value = <GamepadButton.C_DPAD_UP: 11>
     C_EAST: typing.ClassVar[GamepadButton]  # value = <GamepadButton.C_EAST: 1>
     C_GUIDE: typing.ClassVar[GamepadButton]  # value = <GamepadButton.C_GUIDE: 5>
-    C_LEFTSHOULDER: typing.ClassVar[GamepadButton]  # value = <GamepadButton.C_LEFTSHOULDER: 9>
-    C_LEFTSTICK: typing.ClassVar[GamepadButton]  # value = <GamepadButton.C_LEFTSTICK: 7>
+    C_LSHOULDER: typing.ClassVar[GamepadButton]  # value = <GamepadButton.C_LSHOULDER: 9>
+    C_LSTICK: typing.ClassVar[GamepadButton]  # value = <GamepadButton.C_LSTICK: 7>
     C_NORTH: typing.ClassVar[GamepadButton]  # value = <GamepadButton.C_NORTH: 3>
-    C_RIGHTSHOULDER: typing.ClassVar[GamepadButton]  # value = <GamepadButton.C_RIGHTSHOULDER: 10>
-    C_RIGHTSTICK: typing.ClassVar[GamepadButton]  # value = <GamepadButton.C_RIGHTSTICK: 8>
+    C_RSHOULDER: typing.ClassVar[GamepadButton]  # value = <GamepadButton.C_RSHOULDER: 10>
+    C_RSTICK: typing.ClassVar[GamepadButton]  # value = <GamepadButton.C_RSTICK: 8>
     C_SOUTH: typing.ClassVar[GamepadButton]  # value = <GamepadButton.C_SOUTH: 0>
     C_START: typing.ClassVar[GamepadButton]  # value = <GamepadButton.C_START: 6>
     C_WEST: typing.ClassVar[GamepadButton]  # value = <GamepadButton.C_WEST: 2>
-    __members__: typing.ClassVar[dict[str, GamepadButton]]  # value = {'C_SOUTH': <GamepadButton.C_SOUTH: 0>, 'C_EAST': <GamepadButton.C_EAST: 1>, 'C_WEST': <GamepadButton.C_WEST: 2>, 'C_NORTH': <GamepadButton.C_NORTH: 3>, 'C_BACK': <GamepadButton.C_BACK: 4>, 'C_GUIDE': <GamepadButton.C_GUIDE: 5>, 'C_START': <GamepadButton.C_START: 6>, 'C_LEFTSTICK': <GamepadButton.C_LEFTSTICK: 7>, 'C_RIGHTSTICK': <GamepadButton.C_RIGHTSTICK: 8>, 'C_LEFTSHOULDER': <GamepadButton.C_LEFTSHOULDER: 9>, 'C_RIGHTSHOULDER': <GamepadButton.C_RIGHTSHOULDER: 10>, 'C_DPADUP': <GamepadButton.C_DPADUP: 11>, 'C_DPADDOWN': <GamepadButton.C_DPADDOWN: 12>, 'C_DPADLEFT': <GamepadButton.C_DPADLEFT: 13>, 'C_DPADRIGHT': <GamepadButton.C_DPADRIGHT: 14>}
-    def __and__(self, other: typing.Any) -> typing.Any:
+    @classmethod
+    def __new__(cls, value):
         ...
-    def __eq__(self, other: typing.Any) -> bool:
-        ...
-    def __ge__(self, other: typing.Any) -> bool:
-        ...
-    def __getstate__(self) -> int:
-        ...
-    def __gt__(self, other: typing.Any) -> bool:
-        ...
-    def __hash__(self) -> int:
-        ...
-    def __index__(self) -> int:
-        ...
-    def __init__(self, value: int) -> None:
-        ...
-    def __int__(self) -> int:
-        ...
-    def __invert__(self) -> typing.Any:
-        ...
-    def __le__(self, other: typing.Any) -> bool:
-        ...
-    def __lt__(self, other: typing.Any) -> bool:
-        ...
-    def __ne__(self, other: typing.Any) -> bool:
-        ...
-    def __or__(self, other: typing.Any) -> typing.Any:
-        ...
-    def __rand__(self, other: typing.Any) -> typing.Any:
-        ...
-    def __repr__(self) -> str:
-        ...
-    def __ror__(self, other: typing.Any) -> typing.Any:
-        ...
-    def __rxor__(self, other: typing.Any) -> typing.Any:
-        ...
-    def __setstate__(self, state: int) -> None:
-        ...
-    def __str__(self) -> str:
-        ...
-    def __xor__(self, other: typing.Any) -> typing.Any:
-        ...
-    @property
-    def name(self) -> str:
-        ...
-    @property
-    def value(self) -> int:
-        ...
-class GamepadType:
-    """
-    Members:
-    
-      C_STANDARD
-    
-      C_XBOX360
-    
-      C_XBOXONE
-    
-      C_PS3
-    
-      C_PS4
-    
-      C_PS5
-    
-      C_SWITCHPRO
-    
-      C_SWITCHJOYCONLEFT
-    
-      C_SWITCHJOYCONRIGHT
-    
-      C_SWITCHJOYCONPAIR
-    """
+    def __format__(self, format_spec):
+        """
+        Convert to a string according to format_spec.
+        """
+class GamepadType(enum.IntEnum):
     C_PS3: typing.ClassVar[GamepadType]  # value = <GamepadType.C_PS3: 4>
     C_PS4: typing.ClassVar[GamepadType]  # value = <GamepadType.C_PS4: 5>
     C_PS5: typing.ClassVar[GamepadType]  # value = <GamepadType.C_PS5: 6>
     C_STANDARD: typing.ClassVar[GamepadType]  # value = <GamepadType.C_STANDARD: 1>
-    C_SWITCHJOYCONLEFT: typing.ClassVar[GamepadType]  # value = <GamepadType.C_SWITCHJOYCONLEFT: 8>
-    C_SWITCHJOYCONPAIR: typing.ClassVar[GamepadType]  # value = <GamepadType.C_SWITCHJOYCONPAIR: 10>
-    C_SWITCHJOYCONRIGHT: typing.ClassVar[GamepadType]  # value = <GamepadType.C_SWITCHJOYCONRIGHT: 9>
-    C_SWITCHPRO: typing.ClassVar[GamepadType]  # value = <GamepadType.C_SWITCHPRO: 7>
-    C_XBOX360: typing.ClassVar[GamepadType]  # value = <GamepadType.C_XBOX360: 2>
-    C_XBOXONE: typing.ClassVar[GamepadType]  # value = <GamepadType.C_XBOXONE: 3>
-    __members__: typing.ClassVar[dict[str, GamepadType]]  # value = {'C_STANDARD': <GamepadType.C_STANDARD: 1>, 'C_XBOX360': <GamepadType.C_XBOX360: 2>, 'C_XBOXONE': <GamepadType.C_XBOXONE: 3>, 'C_PS3': <GamepadType.C_PS3: 4>, 'C_PS4': <GamepadType.C_PS4: 5>, 'C_PS5': <GamepadType.C_PS5: 6>, 'C_SWITCHPRO': <GamepadType.C_SWITCHPRO: 7>, 'C_SWITCHJOYCONLEFT': <GamepadType.C_SWITCHJOYCONLEFT: 8>, 'C_SWITCHJOYCONRIGHT': <GamepadType.C_SWITCHJOYCONRIGHT: 9>, 'C_SWITCHJOYCONPAIR': <GamepadType.C_SWITCHJOYCONPAIR: 10>}
-    def __and__(self, other: typing.Any) -> typing.Any:
+    C_SWITCH_JOYCON_LEFT: typing.ClassVar[GamepadType]  # value = <GamepadType.C_SWITCH_JOYCON_LEFT: 8>
+    C_SWITCH_JOYCON_PAIR: typing.ClassVar[GamepadType]  # value = <GamepadType.C_SWITCH_JOYCON_PAIR: 10>
+    C_SWITCH_JOYCON_RIGHT: typing.ClassVar[GamepadType]  # value = <GamepadType.C_SWITCH_JOYCON_RIGHT: 9>
+    C_SWITCH_PRO: typing.ClassVar[GamepadType]  # value = <GamepadType.C_SWITCH_PRO: 7>
+    C_XBOX_360: typing.ClassVar[GamepadType]  # value = <GamepadType.C_XBOX_360: 2>
+    C_XBOX_ONE: typing.ClassVar[GamepadType]  # value = <GamepadType.C_XBOX_ONE: 3>
+    @classmethod
+    def __new__(cls, value):
         ...
-    def __eq__(self, other: typing.Any) -> bool:
-        ...
-    def __ge__(self, other: typing.Any) -> bool:
-        ...
-    def __getstate__(self) -> int:
-        ...
-    def __gt__(self, other: typing.Any) -> bool:
-        ...
-    def __hash__(self) -> int:
-        ...
-    def __index__(self) -> int:
-        ...
-    def __init__(self, value: int) -> None:
-        ...
-    def __int__(self) -> int:
-        ...
-    def __invert__(self) -> typing.Any:
-        ...
-    def __le__(self, other: typing.Any) -> bool:
-        ...
-    def __lt__(self, other: typing.Any) -> bool:
-        ...
-    def __ne__(self, other: typing.Any) -> bool:
-        ...
-    def __or__(self, other: typing.Any) -> typing.Any:
-        ...
-    def __rand__(self, other: typing.Any) -> typing.Any:
-        ...
-    def __repr__(self) -> str:
-        ...
-    def __ror__(self, other: typing.Any) -> typing.Any:
-        ...
-    def __rxor__(self, other: typing.Any) -> typing.Any:
-        ...
-    def __setstate__(self, state: int) -> None:
-        ...
-    def __str__(self) -> str:
-        ...
-    def __xor__(self, other: typing.Any) -> typing.Any:
-        ...
-    @property
-    def name(self) -> str:
-        ...
-    @property
-    def value(self) -> int:
-        ...
+    def __format__(self, format_spec):
+        """
+        Convert to a string according to format_spec.
+        """
 class InputAction:
     """
     
@@ -928,7 +592,7 @@ class InputAction:
             mouse_button (MouseButton): Mouse button code.
         """
     @typing.overload
-    def __init__(self, gamepad_button: GamepadButton, slot: int = 0) -> None:
+    def __init__(self, gamepad_button: GamepadButton, slot: typing.SupportsInt = 0) -> None:
         """
         Create an input action from a gamepad button.
         
@@ -937,7 +601,7 @@ class InputAction:
             slot (int, optional): Gamepad slot (default is 0).
         """
     @typing.overload
-    def __init__(self, gamepad_axis: GamepadAxis, is_positive: bool, slot: int = 0) -> None:
+    def __init__(self, gamepad_axis: GamepadAxis, is_positive: bool, slot: typing.SupportsInt = 0) -> None:
         """
         Create an input action from a gamepad axis direction.
         
@@ -946,276 +610,7 @@ class InputAction:
             is_positive (bool): True for positive direction, False for negative.
             slot (int, optional): Gamepad slot (default is 0).
         """
-class Keycode:
-    """
-    Members:
-    
-      K_BACKSPACE
-    
-      K_TAB
-    
-      K_RETURN
-    
-      K_ESC
-    
-      K_SPACE
-    
-      K_EXCLAIM
-    
-      K_DBLQUOTE
-    
-      K_HASH
-    
-      K_DOLLAR
-    
-      K_PERCENT
-    
-      K_AMPERSAND
-    
-      K_SGLQUOTE
-    
-      K_ASTERISK
-    
-      K_PLUS
-    
-      K_COMMA
-    
-      K_MINUS
-    
-      K_PERIOD
-    
-      K_SLASH
-    
-      K_0
-    
-      K_1
-    
-      K_2
-    
-      K_3
-    
-      K_4
-    
-      K_5
-    
-      K_6
-    
-      K_7
-    
-      K_8
-    
-      K_9
-    
-      K_COLON
-    
-      K_SEMICOLON
-    
-      K_LT
-    
-      K_EQ
-    
-      K_GT
-    
-      K_QUESTION
-    
-      K_AT
-    
-      K_LBRACKET
-    
-      K_BACKSLASH
-    
-      K_RBRACKET
-    
-      K_CARET
-    
-      K_UNDERSCORE
-    
-      K_GRAVE
-    
-      K_a
-    
-      K_b
-    
-      K_c
-    
-      K_d
-    
-      K_e
-    
-      K_f
-    
-      K_g
-    
-      K_h
-    
-      K_i
-    
-      K_j
-    
-      K_k
-    
-      K_l
-    
-      K_m
-    
-      K_n
-    
-      K_o
-    
-      K_p
-    
-      K_q
-    
-      K_r
-    
-      K_s
-    
-      K_t
-    
-      K_u
-    
-      K_v
-    
-      K_w
-    
-      K_x
-    
-      K_y
-    
-      K_z
-    
-      K_LBRACE
-    
-      K_PIPE
-    
-      K_RBRACE
-    
-      K_TILDE
-    
-      K_DEL
-    
-      K_CAPS
-    
-      K_F1
-    
-      K_F2
-    
-      K_F3
-    
-      K_F4
-    
-      K_F5
-    
-      K_F6
-    
-      K_F7
-    
-      K_F8
-    
-      K_F9
-    
-      K_F10
-    
-      K_F11
-    
-      K_F12
-    
-      K_PRTSCR
-    
-      K_SCRLK
-    
-      K_PAUSE
-    
-      K_INS
-    
-      K_HOME
-    
-      K_PGUP
-    
-      K_END
-    
-      K_PGDOWN
-    
-      K_RIGHT
-    
-      K_LEFT
-    
-      K_DOWN
-    
-      K_UP
-    
-      K_NUMLOCK
-    
-      K_KP_DIV
-    
-      K_KP_MULT
-    
-      K_KP_MINUS
-    
-      K_KP_PLUS
-    
-      K_KP_ENTER
-    
-      K_KP_1
-    
-      K_KP_2
-    
-      K_KP_3
-    
-      K_KP_4
-    
-      K_KP_5
-    
-      K_KP_6
-    
-      K_KP_7
-    
-      K_KP_8
-    
-      K_KP_9
-    
-      K_KP_0
-    
-      K_KP_PERIOD
-    
-      K_AGAIN
-    
-      K_UNDO
-    
-      K_CUT
-    
-      K_COPY
-    
-      K_PASTE
-    
-      K_FIND
-    
-      K_MUTE
-    
-      K_VOLUP
-    
-      K_VOLDOWN
-    
-      K_LPAREN
-    
-      K_RPAREN
-    
-      K_LCTRL
-    
-      K_LSHIFT
-    
-      K_LALT
-    
-      K_LGUI
-    
-      K_RCTRL
-    
-      K_RSHIFT
-    
-      K_RALT
-    
-      K_RGUI
-    """
+class Keycode(enum.IntEnum):
     K_0: typing.ClassVar[Keycode]  # value = <Keycode.K_0: 48>
     K_1: typing.ClassVar[Keycode]  # value = <Keycode.K_1: 49>
     K_2: typing.ClassVar[Keycode]  # value = <Keycode.K_2: 50>
@@ -1349,41 +744,13 @@ class Keycode:
     K_x: typing.ClassVar[Keycode]  # value = <Keycode.K_x: 120>
     K_y: typing.ClassVar[Keycode]  # value = <Keycode.K_y: 121>
     K_z: typing.ClassVar[Keycode]  # value = <Keycode.K_z: 122>
-    __members__: typing.ClassVar[dict[str, Keycode]]  # value = {'K_BACKSPACE': <Keycode.K_BACKSPACE: 8>, 'K_TAB': <Keycode.K_TAB: 9>, 'K_RETURN': <Keycode.K_RETURN: 13>, 'K_ESC': <Keycode.K_ESC: 27>, 'K_SPACE': <Keycode.K_SPACE: 32>, 'K_EXCLAIM': <Keycode.K_EXCLAIM: 33>, 'K_DBLQUOTE': <Keycode.K_DBLQUOTE: 34>, 'K_HASH': <Keycode.K_HASH: 35>, 'K_DOLLAR': <Keycode.K_DOLLAR: 36>, 'K_PERCENT': <Keycode.K_PERCENT: 37>, 'K_AMPERSAND': <Keycode.K_AMPERSAND: 38>, 'K_SGLQUOTE': <Keycode.K_SGLQUOTE: 39>, 'K_ASTERISK': <Keycode.K_ASTERISK: 42>, 'K_PLUS': <Keycode.K_PLUS: 43>, 'K_COMMA': <Keycode.K_COMMA: 44>, 'K_MINUS': <Keycode.K_MINUS: 45>, 'K_PERIOD': <Keycode.K_PERIOD: 46>, 'K_SLASH': <Keycode.K_SLASH: 47>, 'K_0': <Keycode.K_0: 48>, 'K_1': <Keycode.K_1: 49>, 'K_2': <Keycode.K_2: 50>, 'K_3': <Keycode.K_3: 51>, 'K_4': <Keycode.K_4: 52>, 'K_5': <Keycode.K_5: 53>, 'K_6': <Keycode.K_6: 54>, 'K_7': <Keycode.K_7: 55>, 'K_8': <Keycode.K_8: 56>, 'K_9': <Keycode.K_9: 57>, 'K_COLON': <Keycode.K_COLON: 58>, 'K_SEMICOLON': <Keycode.K_SEMICOLON: 59>, 'K_LT': <Keycode.K_LT: 60>, 'K_EQ': <Keycode.K_EQ: 61>, 'K_GT': <Keycode.K_GT: 62>, 'K_QUESTION': <Keycode.K_QUESTION: 63>, 'K_AT': <Keycode.K_AT: 64>, 'K_LBRACKET': <Keycode.K_LBRACKET: 91>, 'K_BACKSLASH': <Keycode.K_BACKSLASH: 92>, 'K_RBRACKET': <Keycode.K_RBRACKET: 93>, 'K_CARET': <Keycode.K_CARET: 94>, 'K_UNDERSCORE': <Keycode.K_UNDERSCORE: 95>, 'K_GRAVE': <Keycode.K_GRAVE: 96>, 'K_a': <Keycode.K_a: 97>, 'K_b': <Keycode.K_b: 98>, 'K_c': <Keycode.K_c: 99>, 'K_d': <Keycode.K_d: 100>, 'K_e': <Keycode.K_e: 101>, 'K_f': <Keycode.K_f: 102>, 'K_g': <Keycode.K_g: 103>, 'K_h': <Keycode.K_h: 104>, 'K_i': <Keycode.K_i: 105>, 'K_j': <Keycode.K_j: 106>, 'K_k': <Keycode.K_k: 107>, 'K_l': <Keycode.K_l: 108>, 'K_m': <Keycode.K_m: 109>, 'K_n': <Keycode.K_n: 110>, 'K_o': <Keycode.K_o: 111>, 'K_p': <Keycode.K_p: 112>, 'K_q': <Keycode.K_q: 113>, 'K_r': <Keycode.K_r: 114>, 'K_s': <Keycode.K_s: 115>, 'K_t': <Keycode.K_t: 116>, 'K_u': <Keycode.K_u: 117>, 'K_v': <Keycode.K_v: 118>, 'K_w': <Keycode.K_w: 119>, 'K_x': <Keycode.K_x: 120>, 'K_y': <Keycode.K_y: 121>, 'K_z': <Keycode.K_z: 122>, 'K_LBRACE': <Keycode.K_LBRACE: 123>, 'K_PIPE': <Keycode.K_PIPE: 124>, 'K_RBRACE': <Keycode.K_RBRACE: 125>, 'K_TILDE': <Keycode.K_TILDE: 126>, 'K_DEL': <Keycode.K_DEL: 127>, 'K_CAPS': <Keycode.K_CAPS: 1073741881>, 'K_F1': <Keycode.K_F1: 1073741882>, 'K_F2': <Keycode.K_F2: 1073741883>, 'K_F3': <Keycode.K_F3: 1073741884>, 'K_F4': <Keycode.K_F4: 1073741885>, 'K_F5': <Keycode.K_F5: 1073741886>, 'K_F6': <Keycode.K_F6: 1073741887>, 'K_F7': <Keycode.K_F7: 1073741888>, 'K_F8': <Keycode.K_F8: 1073741889>, 'K_F9': <Keycode.K_F9: 1073741890>, 'K_F10': <Keycode.K_F10: 1073741891>, 'K_F11': <Keycode.K_F11: 1073741892>, 'K_F12': <Keycode.K_F12: 1073741893>, 'K_PRTSCR': <Keycode.K_PRTSCR: 1073741894>, 'K_SCRLK': <Keycode.K_SCRLK: 1073741895>, 'K_PAUSE': <Keycode.K_PAUSE: 1073741896>, 'K_INS': <Keycode.K_INS: 1073741897>, 'K_HOME': <Keycode.K_HOME: 1073741898>, 'K_PGUP': <Keycode.K_PGUP: 1073741899>, 'K_END': <Keycode.K_END: 1073741901>, 'K_PGDOWN': <Keycode.K_PGDOWN: 1073741902>, 'K_RIGHT': <Keycode.K_RIGHT: 1073741903>, 'K_LEFT': <Keycode.K_LEFT: 1073741904>, 'K_DOWN': <Keycode.K_DOWN: 1073741905>, 'K_UP': <Keycode.K_UP: 1073741906>, 'K_NUMLOCK': <Keycode.K_NUMLOCK: 1073741907>, 'K_KP_DIV': <Keycode.K_KP_DIV: 1073741908>, 'K_KP_MULT': <Keycode.K_KP_MULT: 1073741909>, 'K_KP_MINUS': <Keycode.K_KP_MINUS: 1073741910>, 'K_KP_PLUS': <Keycode.K_KP_PLUS: 1073741911>, 'K_KP_ENTER': <Keycode.K_KP_ENTER: 1073741912>, 'K_KP_1': <Keycode.K_KP_1: 1073741913>, 'K_KP_2': <Keycode.K_KP_2: 1073741914>, 'K_KP_3': <Keycode.K_KP_3: 1073741915>, 'K_KP_4': <Keycode.K_KP_4: 1073741916>, 'K_KP_5': <Keycode.K_KP_5: 1073741917>, 'K_KP_6': <Keycode.K_KP_6: 1073741918>, 'K_KP_7': <Keycode.K_KP_7: 1073741919>, 'K_KP_8': <Keycode.K_KP_8: 1073741920>, 'K_KP_9': <Keycode.K_KP_9: 1073741921>, 'K_KP_0': <Keycode.K_KP_0: 1073741922>, 'K_KP_PERIOD': <Keycode.K_KP_PERIOD: 1073741923>, 'K_AGAIN': <Keycode.K_AGAIN: 1073741945>, 'K_UNDO': <Keycode.K_UNDO: 1073741946>, 'K_CUT': <Keycode.K_CUT: 1073741947>, 'K_COPY': <Keycode.K_COPY: 1073741948>, 'K_PASTE': <Keycode.K_PASTE: 1073741949>, 'K_FIND': <Keycode.K_FIND: 1073741950>, 'K_MUTE': <Keycode.K_MUTE: 1073741951>, 'K_VOLUP': <Keycode.K_VOLUP: 1073741952>, 'K_VOLDOWN': <Keycode.K_VOLDOWN: 1073741953>, 'K_LPAREN': <Keycode.K_LPAREN: 40>, 'K_RPAREN': <Keycode.K_RPAREN: 41>, 'K_LCTRL': <Keycode.K_LCTRL: 1073742048>, 'K_LSHIFT': <Keycode.K_LSHIFT: 1073742049>, 'K_LALT': <Keycode.K_LALT: 1073742050>, 'K_LGUI': <Keycode.K_LGUI: 1073742051>, 'K_RCTRL': <Keycode.K_RCTRL: 1073742052>, 'K_RSHIFT': <Keycode.K_RSHIFT: 1073742053>, 'K_RALT': <Keycode.K_RALT: 1073742054>, 'K_RGUI': <Keycode.K_RGUI: 1073742055>}
-    def __eq__(self, other: typing.Any) -> bool:
+    @classmethod
+    def __new__(cls, value):
         ...
-    def __ge__(self, other: typing.Any) -> bool:
-        ...
-    def __getstate__(self) -> int:
-        ...
-    def __gt__(self, other: typing.Any) -> bool:
-        ...
-    def __hash__(self) -> int:
-        ...
-    def __index__(self) -> int:
-        ...
-    def __init__(self, value: int) -> None:
-        ...
-    def __int__(self) -> int:
-        ...
-    def __le__(self, other: typing.Any) -> bool:
-        ...
-    def __lt__(self, other: typing.Any) -> bool:
-        ...
-    def __ne__(self, other: typing.Any) -> bool:
-        ...
-    def __repr__(self) -> str:
-        ...
-    def __setstate__(self, state: int) -> None:
-        ...
-    def __str__(self) -> str:
-        ...
-    @property
-    def name(self) -> str:
-        ...
-    @property
-    def value(self) -> int:
-        ...
+    def __format__(self, format_spec):
+        """
+        Convert to a string according to format_spec.
+        """
 class Line:
     """
     
@@ -1402,7 +769,7 @@ class Line:
         Returns:
             bool: True if all components are equal.
         """
-    def __getitem__(self, arg0: int) -> float:
+    def __getitem__(self, arg0: typing.SupportsInt) -> float:
         """
         Get coordinate by index:
             0 = ax, 1 = ay, 2 = bx, 3 = by
@@ -1416,7 +783,7 @@ class Line:
         Create a default line with all values set to 0.
         """
     @typing.overload
-    def __init__(self, ax: float, ay: float, bx: float, by: float) -> None:
+    def __init__(self, ax: typing.SupportsFloat, ay: typing.SupportsFloat, bx: typing.SupportsFloat, by: typing.SupportsFloat) -> None:
         """
         Create a line from two coordinate points.
         
@@ -1427,7 +794,7 @@ class Line:
             by (float): Y-coordinate of point B.
         """
     @typing.overload
-    def __init__(self, ax: float, ay: float, b: Vec2) -> None:
+    def __init__(self, ax: typing.SupportsFloat, ay: typing.SupportsFloat, b: Vec2) -> None:
         """
         Create a line from A coordinates and a Vec2 B point.
         
@@ -1437,7 +804,7 @@ class Line:
             b (Vec2): Point B.
         """
     @typing.overload
-    def __init__(self, a: Vec2, bx: float, by: float) -> None:
+    def __init__(self, a: Vec2, bx: typing.SupportsFloat, by: typing.SupportsFloat) -> None:
         """
         Create a line from a Vec2 A point and B coordinates.
         
@@ -1456,14 +823,14 @@ class Line:
             b (Vec2): Point B.
         """
     @typing.overload
-    def __init__(self, arg0: typing.Sequence) -> None:
+    def __init__(self, arg0: collections.abc.Sequence) -> None:
         """
         Create a line from two 2-element sequences: [[ax, ay], [bx, by]].
         
         Raises:
             ValueError: If either point is not a 2-element sequence.
         """
-    def __iter__(self) -> typing.Iterator:
+    def __iter__(self) -> collections.abc.Iterator:
         ...
     def __len__(self) -> int:
         """
@@ -1494,7 +861,7 @@ class Line:
             offset (Vec2 | list[float]): The amount to move.
         """
     @property
-    def a(self) -> tuple:
+    def a(self) -> Vec2:
         """
         Get or set point A as a tuple or Vec2.
         """
@@ -1507,7 +874,7 @@ class Line:
         X-coordinate of point A.
         """
     @ax.setter
-    def ax(self, arg0: float) -> None:
+    def ax(self, arg0: typing.SupportsFloat) -> None:
         ...
     @property
     def ay(self) -> float:
@@ -1515,10 +882,10 @@ class Line:
         Y-coordinate of point A.
         """
     @ay.setter
-    def ay(self, arg0: float) -> None:
+    def ay(self, arg0: typing.SupportsFloat) -> None:
         ...
     @property
-    def b(self) -> tuple:
+    def b(self) -> Vec2:
         """
         Get or set point B as a tuple or Vec2.
         """
@@ -1531,7 +898,7 @@ class Line:
         X-coordinate of point B.
         """
     @bx.setter
-    def bx(self, arg0: float) -> None:
+    def bx(self, arg0: typing.SupportsFloat) -> None:
         ...
     @property
     def by(self) -> float:
@@ -1539,67 +906,192 @@ class Line:
         Y-coordinate of point B.
         """
     @by.setter
-    def by(self, arg0: float) -> None:
+    def by(self, arg0: typing.SupportsFloat) -> None:
         ...
     @property
     def length(self) -> float:
         """
         The Euclidean length of the line segment.
         """
-class MouseButton:
-    """
-    Members:
-    
-      M_LEFT
-    
-      M_MIDDLE
-    
-      M_RIGHT
-    
-      M_SIDE1
-    
-      M_SIDE2
-    """
+class MouseButton(enum.IntEnum):
     M_LEFT: typing.ClassVar[MouseButton]  # value = <MouseButton.M_LEFT: 1>
     M_MIDDLE: typing.ClassVar[MouseButton]  # value = <MouseButton.M_MIDDLE: 2>
     M_RIGHT: typing.ClassVar[MouseButton]  # value = <MouseButton.M_RIGHT: 3>
     M_SIDE1: typing.ClassVar[MouseButton]  # value = <MouseButton.M_SIDE1: 4>
     M_SIDE2: typing.ClassVar[MouseButton]  # value = <MouseButton.M_SIDE2: 5>
-    __members__: typing.ClassVar[dict[str, MouseButton]]  # value = {'M_LEFT': <MouseButton.M_LEFT: 1>, 'M_MIDDLE': <MouseButton.M_MIDDLE: 2>, 'M_RIGHT': <MouseButton.M_RIGHT: 3>, 'M_SIDE1': <MouseButton.M_SIDE1: 4>, 'M_SIDE2': <MouseButton.M_SIDE2: 5>}
-    def __eq__(self, other: typing.Any) -> bool:
+    @classmethod
+    def __new__(cls, value):
         ...
-    def __ge__(self, other: typing.Any) -> bool:
-        ...
-    def __getstate__(self) -> int:
-        ...
-    def __gt__(self, other: typing.Any) -> bool:
-        ...
-    def __hash__(self) -> int:
-        ...
-    def __index__(self) -> int:
-        ...
-    def __init__(self, value: int) -> None:
-        ...
-    def __int__(self) -> int:
-        ...
-    def __le__(self, other: typing.Any) -> bool:
-        ...
-    def __lt__(self, other: typing.Any) -> bool:
-        ...
-    def __ne__(self, other: typing.Any) -> bool:
-        ...
-    def __repr__(self) -> str:
-        ...
-    def __setstate__(self, state: int) -> None:
-        ...
-    def __str__(self) -> str:
+    def __format__(self, format_spec):
+        """
+        Convert to a string according to format_spec.
+        """
+class PixelArray:
+    """
+    
+    Represents a 2D pixel buffer for image manipulation and blitting operations.
+    
+    A PixelArray is a 2D array of pixels that can be manipulated, drawn on, and used as a source
+    for texture creation or blitting to other PixelArrays. Supports pixel-level operations,
+    color key transparency, and alpha blending.
+        
+    """
+    @typing.overload
+    def __init__(self, size: Vec2) -> None:
+        """
+        Create a new PixelArray with the specified dimensions.
+        
+        Args:
+            size (Vec2): The size of the pixel array as (width, height).
+        
+        Raises:
+            RuntimeError: If pixel array creation fails.
+        """
+    @typing.overload
+    def __init__(self, file_path: str) -> None:
+        """
+        Create a PixelArray by loading an image from a file.
+        
+        Args:
+            file_path (str): Path to the image file to load.
+        
+        Raises:
+            RuntimeError: If the file cannot be loaded or doesn't exist.
+        """
+    @typing.overload
+    def blit(self, pixel_array: PixelArray, pos: Vec2, anchor: Anchor = Anchor.CENTER, src: typing.Any = None) -> None:
+        """
+        Blit (copy) another pixel array onto this pixel array at the specified position with anchor alignment.
+        
+        Args:
+            pixel_array (PixelArray): The source pixel array to blit from.
+            pos (Vec2): The position to blit to.
+            anchor (Anchor, optional): The anchor point for positioning. Defaults to CENTER.
+            src (Rect, optional): The source rectangle to blit from. Defaults to entire source pixel array.
+        
+        Raises:
+            RuntimeError: If the blit operation fails.
+        """
+    @typing.overload
+    def blit(self, pixel_array: PixelArray, dst: Rect, src: typing.Any = None) -> None:
+        """
+        Blit (copy) another pixel array onto this pixel array with specified destination and source rectangles.
+        
+        Args:
+            pixel_array (PixelArray): The source pixel array to blit from.
+            dst (Rect): The destination rectangle on this pixel array.
+            src (Rect, optional): The source rectangle to blit from. Defaults to entire source pixel array.
+        
+        Raises:
+            RuntimeError: If the blit operation fails.
+        """
+    def copy(self) -> PixelArray:
+        """
+        Create a copy of this pixel array.
+        
+        Returns:
+            PixelArray: A new PixelArray that is an exact copy of this one.
+        
+        Raises:
+            RuntimeError: If pixel array copying fails.
+        """
+    def fill(self, color: Color) -> None:
+        """
+        Fill the entire pixel array with a solid color.
+        
+        Args:
+            color (Color): The color to fill the pixel array with.
+        """
+    def get_at(self, coord: Vec2) -> Color:
+        """
+        Get the color of a pixel at the specified coordinates.
+        
+        Args:
+            coord (Vec2): The coordinates of the pixel as (x, y).
+        
+        Returns:
+            Color: The color of the pixel at the specified coordinates.
+        
+        Raises:
+            IndexError: If coordinates are outside the pixel array bounds.
+        """
+    def set_at(self, coord: Vec2, color: Color) -> None:
+        """
+        Set the color of a pixel at the specified coordinates.
+        
+        Args:
+            coord (Vec2): The coordinates of the pixel as (x, y).
+            color (Color): The color to set the pixel to.
+        
+        Raises:
+            IndexError: If coordinates are outside the pixel array bounds.
+        """
+    @property
+    def alpha_mod(self) -> int:
+        """
+        The alpha modulation value for the pixel array.
+        
+        Controls the overall transparency of the pixel array. Values range from 0 (fully transparent)
+        to 255 (fully opaque).
+        
+        Returns:
+            int: The current alpha modulation value [0-255].
+        
+        Raises:
+            RuntimeError: If getting the alpha value fails.
+        """
+    @alpha_mod.setter
+    def alpha_mod(self, arg1: typing.SupportsInt) -> None:
         ...
     @property
-    def name(self) -> str:
+    def color_key(self) -> Color:
+        """
+        The color key for transparency.
+        
+        When set, pixels of this color will be treated as transparent during blitting operations.
+        Used for simple transparency effects.
+        
+        Returns:
+            Color: The current color key.
+        
+        Raises:
+            RuntimeError: If getting the color key fails.
+        """
+    @color_key.setter
+    def color_key(self, arg1: Color) -> None:
         ...
     @property
-    def value(self) -> int:
-        ...
+    def height(self) -> int:
+        """
+        The height of the pixel array.
+        
+        Returns:
+            int: The pixel array height.
+        """
+    @property
+    def rect(self) -> Rect:
+        """
+        A rectangle representing the pixel array bounds.
+        
+        Returns:
+            Rect: A rectangle with position (0, 0) and the pixel array's dimensions.
+        """
+    @property
+    def size(self) -> Vec2:
+        """
+        The size of the pixel array as a Vec2.
+        
+        Returns:
+            Vec2: The pixel array size as (width, height).
+        """
+    @property
+    def width(self) -> int:
+        """
+        The width of the pixel array.
+        
+        Returns:
+            int: The pixel array width.
+        """
 class PolarCoordinate:
     """
     
@@ -1619,7 +1111,7 @@ class PolarCoordinate:
         Returns:
             bool: True if both angle and radius are equal.
         """
-    def __getitem__(self, index: int) -> float:
+    def __getitem__(self, index: typing.SupportsInt) -> float:
         """
         Access polar coordinate components by index.
         
@@ -1645,7 +1137,7 @@ class PolarCoordinate:
         Create a PolarCoordinate with default values (0.0, 0.0).
         """
     @typing.overload
-    def __init__(self, angle: float, radius: float) -> None:
+    def __init__(self, angle: typing.SupportsFloat, radius: typing.SupportsFloat) -> None:
         """
         Create a PolarCoordinate from angle and radius.
         
@@ -1654,7 +1146,7 @@ class PolarCoordinate:
             radius (float): The radius/distance from origin.
         """
     @typing.overload
-    def __init__(self, arg0: typing.Sequence) -> None:
+    def __init__(self, arg0: collections.abc.Sequence) -> None:
         """
         Create a PolarCoordinate from a sequence of two elements.
         
@@ -1664,7 +1156,7 @@ class PolarCoordinate:
         Raises:
             RuntimeError: If sequence doesn't contain exactly 2 elements.
         """
-    def __iter__(self) -> typing.Iterator:
+    def __iter__(self) -> collections.abc.Iterator:
         """
         Return an iterator over (angle, radius).
         
@@ -1695,7 +1187,7 @@ class PolarCoordinate:
         Returns:
             str: String in format "PolarCoordinate(angle, radius)".
         """
-    def __setitem__(self, index: int, value: float) -> None:
+    def __setitem__(self, index: typing.SupportsInt, value: typing.SupportsFloat) -> None:
         """
         Set polar coordinate components by index.
         
@@ -1726,7 +1218,7 @@ class PolarCoordinate:
         The angle component in radians.
         """
     @angle.setter
-    def angle(self, arg0: float) -> None:
+    def angle(self, arg0: typing.SupportsFloat) -> None:
         ...
     @property
     def radius(self) -> float:
@@ -1734,7 +1226,79 @@ class PolarCoordinate:
         The radius component (distance from origin).
         """
     @radius.setter
-    def radius(self, arg0: float) -> None:
+    def radius(self, arg0: typing.SupportsFloat) -> None:
+        ...
+class Polygon:
+    """
+    
+    Represents a polygon shape defined by a sequence of points.
+    
+    A polygon is a closed shape made up of connected line segments. The points define
+    the vertices of the polygon in order. Supports various geometric operations.
+        
+    """
+    def __getitem__(self, index: typing.SupportsInt) -> Vec2:
+        """
+        Get a point by index.
+        
+        Args:
+            index (int): The index of the point to retrieve.
+        
+        Returns:
+            Vec2: The point at the specified index.
+        
+        Raises:
+            IndexError: If index is out of range.
+        """
+    @typing.overload
+    def __init__(self) -> None:
+        """
+        Create an empty polygon with no points.
+        """
+    @typing.overload
+    def __init__(self, points: collections.abc.Sequence[Vec2]) -> None:
+        """
+        Create a polygon from a vector of Vec2 points.
+        
+        Args:
+            points (list[Vec2]): List of Vec2 points defining the polygon vertices.
+        """
+    @typing.overload
+    def __init__(self, points: collections.abc.Sequence) -> None:
+        """
+        Create a polygon from a sequence of points.
+        
+        Args:
+            points: A sequence of Vec2 objects or 2-element sequences [[x, y], ...].
+        
+        Raises:
+            ValueError: If points are not properly formatted.
+        """
+    def __iter__(self) -> collections.abc.Iterator:
+        """
+        Return an iterator over the polygon's points.
+        """
+    def __len__(self) -> int:
+        """
+        Return the number of points in the polygon.
+        
+        Returns:
+            int: The number of vertices.
+        """
+    def copy(self) -> Polygon:
+        """
+        Return a copy of the polygon.
+        
+        Returns:
+            Polygon: A new polygon with the same points.
+        """
+    @property
+    def points(self) -> list[Vec2]:
+        """
+        The list of Vec2 points that define the polygon vertices.
+        """
+    @points.setter
+    def points(self, arg0: collections.abc.Sequence[Vec2]) -> None:
         ...
 class Rect:
     """
@@ -1763,7 +1327,7 @@ class Rect:
         Returns:
             bool: True if all components (x, y, w, h) are equal.
         """
-    def __getitem__(self, index: int) -> float:
+    def __getitem__(self, index: typing.SupportsInt) -> float:
         """
         Access rectangle components by index.
         
@@ -1782,7 +1346,7 @@ class Rect:
         Create a Rect with default values (0, 0, 0, 0).
         """
     @typing.overload
-    def __init__(self, x: float, y: float, w: float, h: float) -> None:
+    def __init__(self, x: typing.SupportsFloat, y: typing.SupportsFloat, w: typing.SupportsFloat, h: typing.SupportsFloat) -> None:
         """
         Create a Rect with specified position and dimensions.
         
@@ -1793,7 +1357,7 @@ class Rect:
             h (float): The height of the rectangle.
         """
     @typing.overload
-    def __init__(self, x: float, y: float, size: Vec2) -> None:
+    def __init__(self, x: typing.SupportsFloat, y: typing.SupportsFloat, size: Vec2) -> None:
         """
         Create a Rect with specified position and size vector.
         
@@ -1803,7 +1367,7 @@ class Rect:
             size (Vec2): The size as a Vec2 (width, height).
         """
     @typing.overload
-    def __init__(self, pos: Vec2, w: float, h: float) -> None:
+    def __init__(self, pos: Vec2, w: typing.SupportsFloat, h: typing.SupportsFloat) -> None:
         """
         Create a Rect with specified position vector and dimensions.
         
@@ -1822,7 +1386,7 @@ class Rect:
             size (Vec2): The size as a Vec2 (width, height).
         """
     @typing.overload
-    def __init__(self, arg0: typing.Sequence) -> None:
+    def __init__(self, arg0: collections.abc.Sequence) -> None:
         """
         Create a Rect from a sequence of four elements.
         
@@ -1832,7 +1396,7 @@ class Rect:
         Raises:
             RuntimeError: If sequence doesn't contain exactly 4 elements.
         """
-    def __iter__(self) -> typing.Iterator:
+    def __iter__(self) -> collections.abc.Iterator:
         """
         Return an iterator over (x, y, w, h).
         
@@ -1958,7 +1522,7 @@ class Rect:
             offset (Vec2): The offset to move by as (dx, dy).
         """
     @typing.overload
-    def scale_by(self, factor: float) -> None:
+    def scale_by(self, factor: typing.SupportsFloat) -> None:
         """
         Scale the rectangle by a uniform factor.
         
@@ -1995,10 +1559,10 @@ class Rect:
         The y coordinate of the bottom edge.
         """
     @bottom.setter
-    def bottom(self, arg1: float) -> None:
+    def bottom(self, arg1: typing.SupportsFloat) -> None:
         ...
     @property
-    def bottom_left(self) -> tuple:
+    def bottom_left(self) -> Vec2:
         """
         The position of the bottom-left corner as (x, y).
         """
@@ -2006,7 +1570,7 @@ class Rect:
     def bottom_left(self, arg1: Vec2) -> None:
         ...
     @property
-    def bottom_mid(self) -> tuple:
+    def bottom_mid(self) -> Vec2:
         """
         The position of the bottom-middle point as (x, y).
         """
@@ -2014,7 +1578,7 @@ class Rect:
     def bottom_mid(self, arg1: Vec2) -> None:
         ...
     @property
-    def bottom_right(self) -> tuple:
+    def bottom_right(self) -> Vec2:
         """
         The position of the bottom-right corner as (x, y).
         """
@@ -2022,7 +1586,7 @@ class Rect:
     def bottom_right(self, arg1: Vec2) -> None:
         ...
     @property
-    def center(self) -> tuple:
+    def center(self) -> Vec2:
         """
         The position of the center point as (x, y).
         """
@@ -2035,7 +1599,7 @@ class Rect:
         The height of the rectangle.
         """
     @h.setter
-    def h(self, arg0: float) -> None:
+    def h(self, arg0: typing.SupportsFloat) -> None:
         ...
     @property
     def left(self) -> float:
@@ -2043,10 +1607,10 @@ class Rect:
         The x coordinate of the left edge.
         """
     @left.setter
-    def left(self, arg1: float) -> None:
+    def left(self, arg1: typing.SupportsFloat) -> None:
         ...
     @property
-    def mid_left(self) -> tuple:
+    def mid_left(self) -> Vec2:
         """
         The position of the middle-left point as (x, y).
         """
@@ -2054,7 +1618,7 @@ class Rect:
     def mid_left(self, arg1: Vec2) -> None:
         ...
     @property
-    def mid_right(self) -> tuple:
+    def mid_right(self) -> Vec2:
         """
         The position of the middle-right point as (x, y).
         """
@@ -2067,10 +1631,10 @@ class Rect:
         The x coordinate of the right edge.
         """
     @right.setter
-    def right(self, arg1: float) -> None:
+    def right(self, arg1: typing.SupportsFloat) -> None:
         ...
     @property
-    def size(self) -> tuple:
+    def size(self) -> Vec2:
         """
         The size of the rectangle as (width, height).
         """
@@ -2083,10 +1647,10 @@ class Rect:
         The y coordinate of the top edge.
         """
     @top.setter
-    def top(self, arg1: float) -> None:
+    def top(self, arg1: typing.SupportsFloat) -> None:
         ...
     @property
-    def top_left(self) -> tuple:
+    def top_left(self) -> Vec2:
         """
         The position of the top-left corner as (x, y).
         """
@@ -2094,7 +1658,7 @@ class Rect:
     def top_left(self, arg1: Vec2) -> None:
         ...
     @property
-    def top_mid(self) -> tuple:
+    def top_mid(self) -> Vec2:
         """
         The position of the top-middle point as (x, y).
         """
@@ -2102,7 +1666,7 @@ class Rect:
     def top_mid(self, arg1: Vec2) -> None:
         ...
     @property
-    def top_right(self) -> tuple:
+    def top_right(self) -> Vec2:
         """
         The position of the top-right corner as (x, y).
         """
@@ -2115,7 +1679,7 @@ class Rect:
         The width of the rectangle.
         """
     @w.setter
-    def w(self, arg0: float) -> None:
+    def w(self, arg0: typing.SupportsFloat) -> None:
         ...
     @property
     def x(self) -> float:
@@ -2123,7 +1687,7 @@ class Rect:
         The x coordinate of the top-left corner.
         """
     @x.setter
-    def x(self, arg0: float) -> None:
+    def x(self, arg0: typing.SupportsFloat) -> None:
         ...
     @property
     def y(self) -> float:
@@ -2131,361 +1695,9 @@ class Rect:
         The y coordinate of the top-left corner.
         """
     @y.setter
-    def y(self, arg0: float) -> None:
+    def y(self, arg0: typing.SupportsFloat) -> None:
         ...
-class Renderer:
-    """
-    
-    A 2D graphics renderer for drawing shapes, textures, and other visual elements.
-    
-    The Renderer manages the rendering pipeline, handles camera transformations,
-    and provides methods for drawing various primitives and textures to the screen.
-        
-    """
-    def __init__(self, resolution: Vec2) -> None:
-        """
-        Create a Renderer with the specified resolution.
-        
-        Args:
-            resolution (Vec2): The rendering resolution as (width, height).
-        
-        Raises:
-            ValueError: If resolution width or height is <= 0.
-            RuntimeError: If renderer creation fails.
-        """
-    def clear(self, color: Color = ...) -> None:
-        """
-        Clear the renderer with the specified color.
-        
-        Args:
-            color (Color, optional): The color to clear with. Defaults to black (0, 0, 0, 255).
-        
-        Raises:
-            ValueError: If color values are not between 0 and 255.
-        """
-    @typing.overload
-    def draw(self, point: Vec2, color: Color) -> None:
-        """
-        Draw a single point to the renderer.
-        
-        Args:
-            point (Vec2): The position of the point.
-            color (Color): The color of the point.
-        
-        Raises:
-            RuntimeError: If point rendering fails.
-        """
-    @typing.overload
-    def draw(self, texture: Texture, dst_rect: Rect, src_rect: Rect = ...) -> None:
-        """
-        Draw a texture with specified destination and source rectangles.
-        
-        Args:
-            texture (Texture): The texture to draw.
-            dst_rect (Rect): The destination rectangle on the renderer.
-            src_rect (Rect, optional): The source rectangle from the texture. 
-                                      Defaults to entire texture if not specified.
-        
-        Raises:
-            RuntimeError: If texture doesn't belong to this renderer.
-        """
-    @typing.overload
-    def draw(self, texture: Texture, pos: Vec2 = ..., anchor: Anchor = Anchor.CENTER) -> None:
-        """
-        Draw a texture at the specified position with anchor alignment.
-        
-        Args:
-            texture (Texture): The texture to draw.
-            pos (Vec2, optional): The position to draw at. Defaults to (0, 0).
-            anchor (Anchor, optional): The anchor point for positioning. Defaults to CENTER.
-        
-        Raises:
-            RuntimeError: If texture doesn't belong to this renderer.
-        """
-    @typing.overload
-    def draw(self, circle: Circle, color: Color, thickness: int = 0) -> None:
-        """
-        Draw a circle to the renderer.
-        
-        Args:
-            circle (Circle): The circle to draw.
-            color (Color): The color of the circle.
-            thickness (int, optional): The line thickness. If 0 or >= radius, draws filled circle.
-                                      Defaults to 0 (filled).
-        """
-    @typing.overload
-    def draw(self, line: Line, color: Color, thickness: int = 1) -> None:
-        """
-        Draw a line to the renderer.
-        
-        Args:
-            line (Line): The line to draw.
-            color (Color): The color of the line.
-            thickness (int, optional): The line thickness in pixels. Defaults to 1.
-        """
-    @typing.overload
-    def draw(self, rect: Rect, color: Color, thickness: int = 0) -> None:
-        """
-        Draw a rectangle to the renderer.
-        
-        Args:
-            rect (Rect): The rectangle to draw.
-            color (Color): The color of the rectangle.
-            thickness (int, optional): The line thickness. If 0 or >= half width/height, 
-                                      draws filled rectangle. Defaults to 0 (filled).
-        """
-    def get_resolution(self) -> Vec2:
-        """
-        Get the resolution of the renderer.
-        
-        Returns:
-            Vec2: The current rendering resolution as (width, height).
-        """
-    def present(self) -> None:
-        """
-        Present the rendered content to the screen.
-        
-        This finalizes the current frame and displays it. Should be called after
-        all drawing operations for the frame are complete.
-        """
-    def to_viewport(self, coordinate: Vec2) -> Vec2:
-        """
-        Convert window coordinates to viewport coordinates.
-        
-        Args:
-            coordinate (Vec2): The window coordinate to convert.
-        
-        Returns:
-            Vec2: The equivalent viewport coordinate.
-        """
-class Scancode:
-    """
-    Members:
-    
-      S_a
-    
-      S_b
-    
-      S_c
-    
-      S_d
-    
-      S_e
-    
-      S_f
-    
-      S_g
-    
-      S_h
-    
-      S_i
-    
-      S_j
-    
-      S_k
-    
-      S_l
-    
-      S_m
-    
-      S_n
-    
-      S_o
-    
-      S_p
-    
-      S_q
-    
-      S_r
-    
-      S_s
-    
-      S_t
-    
-      S_u
-    
-      S_v
-    
-      S_w
-    
-      S_x
-    
-      S_y
-    
-      S_z
-    
-      S_1
-    
-      S_2
-    
-      S_3
-    
-      S_4
-    
-      S_5
-    
-      S_6
-    
-      S_7
-    
-      S_8
-    
-      S_9
-    
-      S_0
-    
-      S_RETURN
-    
-      S_ESC
-    
-      S_BACKSPACE
-    
-      S_TAB
-    
-      S_SPACE
-    
-      S_MINUS
-    
-      S_EQ
-    
-      S_LBRACKET
-    
-      S_RBRACKET
-    
-      S_BACKSLASH
-    
-      S_SEMICOLON
-    
-      S_APOSTROPHE
-    
-      S_GRAVE
-    
-      S_COMMA
-    
-      S_PERIOD
-    
-      S_SLASH
-    
-      S_CAPS
-    
-      S_F1
-    
-      S_F2
-    
-      S_F3
-    
-      S_F4
-    
-      S_F5
-    
-      S_F6
-    
-      S_F7
-    
-      S_F8
-    
-      S_F9
-    
-      S_F10
-    
-      S_F11
-    
-      S_F12
-    
-      S_PRTSCR
-    
-      S_SCRLK
-    
-      S_PAUSE
-    
-      S_INS
-    
-      S_HOME
-    
-      S_PGUP
-    
-      S_DEL
-    
-      S_END
-    
-      S_PGDOWN
-    
-      S_RIGHT
-    
-      S_LEFT
-    
-      S_DOWN
-    
-      S_UP
-    
-      S_NUMLOCK
-    
-      S_KP_DIV
-    
-      S_KP_MULT
-    
-      S_KP_MINUS
-    
-      S_KP_PLUS
-    
-      S_KP_ENTER
-    
-      S_KP_1
-    
-      S_KP_2
-    
-      S_KP_3
-    
-      S_KP_4
-    
-      S_KP_5
-    
-      S_KP_6
-    
-      S_KP_7
-    
-      S_KP_8
-    
-      S_KP_9
-    
-      S_KP_0
-    
-      S_KP_PERIOD
-    
-      S_AGAIN
-    
-      S_UNDO
-    
-      S_CUT
-    
-      S_COPY
-    
-      S_PASTE
-    
-      S_FIND
-    
-      S_MUTE
-    
-      S_VOLUP
-    
-      S_VOLDOWN
-    
-      S_LCTRL
-    
-      S_LSHIFT
-    
-      S_LALT
-    
-      S_LGUI
-    
-      S_RCTRL
-    
-      S_RSHIFT
-    
-      S_RALT
-    
-      S_RGUI
-    """
+class Scancode(enum.IntEnum):
     S_0: typing.ClassVar[Scancode]  # value = <Scancode.S_0: 39>
     S_1: typing.ClassVar[Scancode]  # value = <Scancode.S_1: 30>
     S_2: typing.ClassVar[Scancode]  # value = <Scancode.S_2: 31>
@@ -2598,220 +1810,12 @@ class Scancode:
     S_x: typing.ClassVar[Scancode]  # value = <Scancode.S_x: 27>
     S_y: typing.ClassVar[Scancode]  # value = <Scancode.S_y: 28>
     S_z: typing.ClassVar[Scancode]  # value = <Scancode.S_z: 29>
-    __members__: typing.ClassVar[dict[str, Scancode]]  # value = {'S_a': <Scancode.S_a: 4>, 'S_b': <Scancode.S_b: 5>, 'S_c': <Scancode.S_c: 6>, 'S_d': <Scancode.S_d: 7>, 'S_e': <Scancode.S_e: 8>, 'S_f': <Scancode.S_f: 9>, 'S_g': <Scancode.S_g: 10>, 'S_h': <Scancode.S_h: 11>, 'S_i': <Scancode.S_i: 12>, 'S_j': <Scancode.S_j: 13>, 'S_k': <Scancode.S_k: 14>, 'S_l': <Scancode.S_l: 15>, 'S_m': <Scancode.S_m: 16>, 'S_n': <Scancode.S_n: 17>, 'S_o': <Scancode.S_o: 18>, 'S_p': <Scancode.S_p: 19>, 'S_q': <Scancode.S_q: 20>, 'S_r': <Scancode.S_r: 21>, 'S_s': <Scancode.S_s: 22>, 'S_t': <Scancode.S_t: 23>, 'S_u': <Scancode.S_u: 24>, 'S_v': <Scancode.S_v: 25>, 'S_w': <Scancode.S_w: 26>, 'S_x': <Scancode.S_x: 27>, 'S_y': <Scancode.S_y: 28>, 'S_z': <Scancode.S_z: 29>, 'S_1': <Scancode.S_1: 30>, 'S_2': <Scancode.S_2: 31>, 'S_3': <Scancode.S_3: 32>, 'S_4': <Scancode.S_4: 33>, 'S_5': <Scancode.S_5: 34>, 'S_6': <Scancode.S_6: 35>, 'S_7': <Scancode.S_7: 36>, 'S_8': <Scancode.S_8: 37>, 'S_9': <Scancode.S_9: 38>, 'S_0': <Scancode.S_0: 39>, 'S_RETURN': <Scancode.S_RETURN: 40>, 'S_ESC': <Scancode.S_ESC: 41>, 'S_BACKSPACE': <Scancode.S_BACKSPACE: 42>, 'S_TAB': <Scancode.S_TAB: 43>, 'S_SPACE': <Scancode.S_SPACE: 44>, 'S_MINUS': <Scancode.S_MINUS: 45>, 'S_EQ': <Scancode.S_EQ: 46>, 'S_LBRACKET': <Scancode.S_LBRACKET: 47>, 'S_RBRACKET': <Scancode.S_RBRACKET: 48>, 'S_BACKSLASH': <Scancode.S_BACKSLASH: 49>, 'S_SEMICOLON': <Scancode.S_SEMICOLON: 51>, 'S_APOSTROPHE': <Scancode.S_APOSTROPHE: 52>, 'S_GRAVE': <Scancode.S_GRAVE: 53>, 'S_COMMA': <Scancode.S_COMMA: 54>, 'S_PERIOD': <Scancode.S_PERIOD: 55>, 'S_SLASH': <Scancode.S_SLASH: 56>, 'S_CAPS': <Scancode.S_CAPS: 57>, 'S_F1': <Scancode.S_F1: 58>, 'S_F2': <Scancode.S_F2: 59>, 'S_F3': <Scancode.S_F3: 60>, 'S_F4': <Scancode.S_F4: 61>, 'S_F5': <Scancode.S_F5: 62>, 'S_F6': <Scancode.S_F6: 63>, 'S_F7': <Scancode.S_F7: 64>, 'S_F8': <Scancode.S_F8: 65>, 'S_F9': <Scancode.S_F9: 66>, 'S_F10': <Scancode.S_F10: 67>, 'S_F11': <Scancode.S_F11: 68>, 'S_F12': <Scancode.S_F12: 69>, 'S_PRTSCR': <Scancode.S_PRTSCR: 70>, 'S_SCRLK': <Scancode.S_SCRLK: 71>, 'S_PAUSE': <Scancode.S_PAUSE: 72>, 'S_INS': <Scancode.S_INS: 73>, 'S_HOME': <Scancode.S_HOME: 74>, 'S_PGUP': <Scancode.S_PGUP: 75>, 'S_DEL': <Scancode.S_DEL: 76>, 'S_END': <Scancode.S_END: 77>, 'S_PGDOWN': <Scancode.S_PGDOWN: 78>, 'S_RIGHT': <Scancode.S_RIGHT: 79>, 'S_LEFT': <Scancode.S_LEFT: 80>, 'S_DOWN': <Scancode.S_DOWN: 81>, 'S_UP': <Scancode.S_UP: 82>, 'S_NUMLOCK': <Scancode.S_NUMLOCK: 83>, 'S_KP_DIV': <Scancode.S_KP_DIV: 84>, 'S_KP_MULT': <Scancode.S_KP_MULT: 85>, 'S_KP_MINUS': <Scancode.S_KP_MINUS: 86>, 'S_KP_PLUS': <Scancode.S_KP_PLUS: 87>, 'S_KP_ENTER': <Scancode.S_KP_ENTER: 88>, 'S_KP_1': <Scancode.S_KP_1: 89>, 'S_KP_2': <Scancode.S_KP_2: 90>, 'S_KP_3': <Scancode.S_KP_3: 91>, 'S_KP_4': <Scancode.S_KP_4: 92>, 'S_KP_5': <Scancode.S_KP_5: 93>, 'S_KP_6': <Scancode.S_KP_6: 94>, 'S_KP_7': <Scancode.S_KP_7: 95>, 'S_KP_8': <Scancode.S_KP_8: 96>, 'S_KP_9': <Scancode.S_KP_9: 97>, 'S_KP_0': <Scancode.S_KP_0: 98>, 'S_KP_PERIOD': <Scancode.S_KP_PERIOD: 99>, 'S_AGAIN': <Scancode.S_AGAIN: 121>, 'S_UNDO': <Scancode.S_UNDO: 122>, 'S_CUT': <Scancode.S_CUT: 123>, 'S_COPY': <Scancode.S_COPY: 124>, 'S_PASTE': <Scancode.S_PASTE: 125>, 'S_FIND': <Scancode.S_FIND: 126>, 'S_MUTE': <Scancode.S_MUTE: 127>, 'S_VOLUP': <Scancode.S_VOLUP: 128>, 'S_VOLDOWN': <Scancode.S_VOLDOWN: 129>, 'S_LCTRL': <Scancode.S_LCTRL: 224>, 'S_LSHIFT': <Scancode.S_LSHIFT: 225>, 'S_LALT': <Scancode.S_LALT: 226>, 'S_LGUI': <Scancode.S_LGUI: 227>, 'S_RCTRL': <Scancode.S_RCTRL: 228>, 'S_RSHIFT': <Scancode.S_RSHIFT: 229>, 'S_RALT': <Scancode.S_RALT: 230>, 'S_RGUI': <Scancode.S_RGUI: 231>}
-    def __and__(self, other: typing.Any) -> typing.Any:
+    @classmethod
+    def __new__(cls, value):
         ...
-    def __eq__(self, other: typing.Any) -> bool:
-        ...
-    def __ge__(self, other: typing.Any) -> bool:
-        ...
-    def __getstate__(self) -> int:
-        ...
-    def __gt__(self, other: typing.Any) -> bool:
-        ...
-    def __hash__(self) -> int:
-        ...
-    def __index__(self) -> int:
-        ...
-    def __init__(self, value: int) -> None:
-        ...
-    def __int__(self) -> int:
-        ...
-    def __invert__(self) -> typing.Any:
-        ...
-    def __le__(self, other: typing.Any) -> bool:
-        ...
-    def __lt__(self, other: typing.Any) -> bool:
-        ...
-    def __ne__(self, other: typing.Any) -> bool:
-        ...
-    def __or__(self, other: typing.Any) -> typing.Any:
-        ...
-    def __rand__(self, other: typing.Any) -> typing.Any:
-        ...
-    def __repr__(self) -> str:
-        ...
-    def __ror__(self, other: typing.Any) -> typing.Any:
-        ...
-    def __rxor__(self, other: typing.Any) -> typing.Any:
-        ...
-    def __setstate__(self, state: int) -> None:
-        ...
-    def __str__(self) -> str:
-        ...
-    def __xor__(self, other: typing.Any) -> typing.Any:
-        ...
-    @property
-    def name(self) -> str:
-        ...
-    @property
-    def value(self) -> int:
-        ...
-class Surface:
-    """
-    
-    Represents a 2D pixel buffer for image manipulation and blitting operations.
-    
-    A Surface is a collection of pixels that can be manipulated, drawn on, and used as a source
-    for texture creation or blitting to other surfaces. Supports pixel-level operations,
-    color key transparency, and alpha blending.
-        
-    """
-    @typing.overload
-    def __init__(self, size: Vec2) -> None:
+    def __format__(self, format_spec):
         """
-        Create a new Surface with the specified dimensions.
-        
-        Args:
-            size (Vec2): The size of the surface as (width, height).
-        
-        Raises:
-            RuntimeError: If surface creation fails.
-        """
-    @typing.overload
-    def __init__(self, file_path: str) -> None:
-        """
-        Create a Surface by loading an image from a file.
-        
-        Args:
-            file_path (str): Path to the image file to load.
-        
-        Raises:
-            RuntimeError: If the file cannot be loaded or doesn't exist.
-        """
-    @typing.overload
-    def blit(self, source: Surface, pos: Vec2, anchor: Anchor = Anchor.CENTER, src_rect: Rect = ...) -> None:
-        """
-        Blit (copy) another surface onto this surface at the specified position with anchor alignment.
-        
-        Args:
-            source (Surface): The source surface to blit from.
-            pos (Vec2): The position to blit to.
-            anchor (Anchor, optional): The anchor point for positioning. Defaults to CENTER.
-            src_rect (Rect, optional): The source rectangle to blit from. Defaults to entire source surface.
-        
-        Raises:
-            RuntimeError: If the blit operation fails.
-        """
-    @typing.overload
-    def blit(self, source: Surface, dst_rect: Rect, src_rect: Rect = ...) -> None:
-        """
-        Blit (copy) another surface onto this surface with specified destination and source rectangles.
-        
-        Args:
-            source (Surface): The source surface to blit from.
-            dst_rect (Rect): The destination rectangle on this surface.
-            src_rect (Rect, optional): The source rectangle to blit from. Defaults to entire source surface.
-        
-        Raises:
-            RuntimeError: If the blit operation fails.
-        """
-    def copy(self) -> Surface:
-        """
-        Create a copy of this surface.
-        
-        Returns:
-            Surface: A new Surface that is an exact copy of this one.
-        
-        Raises:
-            RuntimeError: If surface copying fails.
-        """
-    def fill(self, color: Color) -> None:
-        """
-        Fill the entire surface with a solid color.
-        
-        Args:
-            color (Color): The color to fill the surface with.
-        """
-    def get_at(self, coord: Vec2) -> Color:
-        """
-        Get the color of a pixel at the specified coordinates.
-        
-        Args:
-            coord (Vec2): The coordinates of the pixel as (x, y).
-        
-        Returns:
-            Color: The color of the pixel at the specified coordinates.
-        
-        Raises:
-            IndexError: If coordinates are outside the surface bounds.
-        """
-    def set_at(self, coord: Vec2, color: Color) -> None:
-        """
-        Set the color of a pixel at the specified coordinates.
-        
-        Args:
-            coord (Vec2): The coordinates of the pixel as (x, y).
-            color (Color): The color to set the pixel to.
-        
-        Raises:
-            IndexError: If coordinates are outside the surface bounds.
-        """
-    @property
-    def alpha_mod(self) -> int:
-        """
-        The alpha modulation value for the surface.
-        
-        Controls the overall transparency of the surface. Values range from 0 (fully transparent)
-        to 255 (fully opaque).
-        
-        Returns:
-            int: The current alpha modulation value [0-255].
-        
-        Raises:
-            RuntimeError: If getting the alpha value fails.
-        """
-    @alpha_mod.setter
-    def alpha_mod(self, arg1: int) -> None:
-        ...
-    @property
-    def color_key(self) -> Color:
-        """
-        The color key for transparency.
-        
-        When set, pixels of this color will be treated as transparent during blitting operations.
-        Used for simple transparency effects.
-        
-        Returns:
-            Color: The current color key.
-        
-        Raises:
-            RuntimeError: If getting the color key fails.
-        """
-    @color_key.setter
-    def color_key(self, arg1: Color) -> None:
-        ...
-    @property
-    def height(self) -> int:
-        """
-        The height of the surface in pixels.
-        
-        Returns:
-            int: The surface height.
-        """
-    @property
-    def rect(self) -> Rect:
-        """
-        A rectangle representing the surface bounds.
-        
-        Returns:
-            Rect: A rectangle with position (0, 0) and the surface's dimensions.
-        """
-    @property
-    def size(self) -> Vec2:
-        """
-        The size of the surface as a Vec2.
-        
-        Returns:
-            Vec2: The surface size as (width, height).
-        """
-    @property
-    def width(self) -> int:
-        """
-        The width of the surface in pixels.
-        
-        Returns:
-            int: The surface width.
+        Convert to a string according to format_spec.
         """
 class Texture:
     """
@@ -2820,7 +1824,7 @@ class Texture:
     
     Textures are optimized for fast rendering operations and support various effects
     like rotation, flipping, tinting, alpha blending, and different blend modes.
-    They are created from image files or surfaces and must be associated with a renderer.
+    They can be created from image files or pixel arrays.
         
     """
     class Flip:
@@ -2853,12 +1857,11 @@ class Texture:
         def v(self, arg0: bool) -> None:
             ...
     @typing.overload
-    def __init__(self, renderer: Renderer, file_path: str) -> None:
+    def __init__(self, file_path: str) -> None:
         """
         Create a Texture by loading an image from a file.
         
         Args:
-            renderer (Renderer): The renderer that will own this texture.
             file_path (str): Path to the image file to load.
         
         Raises:
@@ -2866,16 +1869,15 @@ class Texture:
             RuntimeError: If the file cannot be loaded or texture creation fails.
         """
     @typing.overload
-    def __init__(self, renderer: Renderer, surface: Surface) -> None:
+    def __init__(self, pixel_array: PixelArray) -> None:
         """
-        Create a Texture from an existing Surface.
+        Create a Texture from an existing PixelArray.
         
         Args:
-            renderer (Renderer): The renderer that will own this texture.
-            surface (Surface): The surface to convert to a texture.
+            pixel_array (PixelArray): The pixel array to convert to a texture.
         
         Raises:
-            RuntimeError: If texture creation from surface fails.
+            RuntimeError: If texture creation from pixel array fails.
         """
     def get_alpha(self) -> float:
         """
@@ -2891,12 +1893,12 @@ class Texture:
         Returns:
             Rect: A rectangle with position (0, 0) and the texture's dimensions.
         """
-    def get_size(self) -> tuple:
+    def get_size(self) -> Vec2:
         """
         Get the size of the texture.
         
         Returns:
-            tuple[float, float]: The texture size as (width, height).
+            Vec2: The texture size as (width, height).
         """
     def get_tint(self) -> Color:
         """
@@ -2925,7 +1927,25 @@ class Texture:
         
         This is the default blending mode for standard transparency effects.
         """
-    def set_alpha(self, alpha: float) -> None:
+    @typing.overload
+    def render(self, dst: Rect, src: typing.Any = None) -> None:
+        """
+        Render this texture with specified destination and source rectangles.
+        
+        Args:
+            dst (Rect): The destination rectangle on the renderer.
+            src (Rect, optional): The source rectangle from the texture. Defaults to entire texture if not specified.
+        """
+    @typing.overload
+    def render(self, pos: typing.Any = None, anchor: Anchor = Anchor.CENTER) -> None:
+        """
+        Render this texture at the specified position with anchor alignment.
+        
+        Args:
+            pos (Vec2, optional): The position to draw at. Defaults to (0, 0).
+            anchor (Anchor, optional): The anchor point for positioning. Defaults to CENTER.
+        """
+    def set_alpha(self, alpha: typing.SupportsFloat) -> None:
         """
         Set the alpha (transparency) modulation for the texture.
         
@@ -2951,7 +1971,7 @@ class Texture:
         When the texture is drawn, it will be rotated by this angle around its center.
         """
     @angle.setter
-    def angle(self, arg0: float) -> None:
+    def angle(self, arg0: typing.SupportsFloat) -> None:
         ...
     @property
     def flip(self) -> Texture.Flip:
@@ -2963,6 +1983,87 @@ class Texture:
     @flip.setter
     def flip(self, arg0: Texture.Flip) -> None:
         ...
+class Timer:
+    """
+    
+    A timer for tracking countdown durations with pause/resume functionality.
+    
+    The Timer class provides a simple countdown timer that can be started, paused,
+    and resumed. It's useful for implementing time-based game mechanics like
+    cooldowns, temporary effects, or timed events.
+        
+    """
+    def __init__(self, duration: typing.SupportsFloat) -> None:
+        """
+        Create a new Timer instance with the specified duration.
+        
+        Args:
+            duration (float): The countdown duration in seconds. Must be greater than 0.
+        
+        Raises:
+            RuntimeError: If duration is less than or equal to 0.
+        """
+    def pause(self) -> None:
+        """
+        Pause the timer countdown.
+        
+        The timer will stop counting down but retain its current state. Use resume()
+        to continue the countdown from where it was paused. Has no effect if the
+        timer is not started or already paused.
+        """
+    def reset(self) -> None:
+        """
+        Reset the timer to its initial state.
+        
+        Stops the timer and resets it back to its initial, unstarted state.
+        The timer can be started again with `start()` after being reset.
+        """
+    def resume(self) -> None:
+        """
+        Resume a paused timer countdown.
+        
+        Continues the countdown from where it was paused. Has no effect if the
+        timer is not started or not currently paused.
+        """
+    def start(self) -> None:
+        """
+        Start or restart the timer countdown.
+        
+        This begins the countdown from the full duration. If the timer was previously
+        started, this will reset it back to the beginning.
+        """
+    @property
+    def done(self) -> bool:
+        """
+        bool: True if the timer has finished counting down, False otherwise.
+        
+        A timer is considered done when the elapsed time since start (excluding
+        paused time) equals or exceeds the specified duration.
+        """
+    @property
+    def elapsed_time(self) -> float:
+        """
+        float: The time elapsed since the timer was started, in seconds.
+        
+        Returns 0.0 if the timer hasn't been started. This includes time spent
+        while paused, giving you the total wall-clock time since start().
+        """
+    @property
+    def progress(self) -> float:
+        """
+        float: The completion progress of the timer as a value between 0.0 and 1.0.
+        
+        Returns 0.0 if the timer hasn't been started, and 1.0 when the timer
+        is complete. Useful for progress bars and interpolated animations.
+        """
+    @property
+    def time_remaining(self) -> float:
+        """
+        float: The remaining time in seconds before the timer completes.
+        
+        Returns the full duration if the timer hasn't been started, or 0.0 if
+        the timer has already finished.
+        """
 class Vec2:
     """
     
@@ -2972,18 +2073,15 @@ class Vec2:
     Supports arithmetic operations, comparisons, and various mathematical functions.
         
     """
-    def __add__(self, other: typing.Any) -> Vec2:
+    def __add__(self, other: Vec2) -> Vec2:
         """
-        Add another Vec2 or sequence to this Vec2.
+        Add another Vec2 to this Vec2.
         
         Args:
-            other (Vec2 or sequence): The Vec2 or sequence [x, y] to add.
+            other (Vec2): The Vec2 to add.
         
         Returns:
             Vec2: A new Vec2 with the result of the addition.
-        
-        Raises:
-            TypeError: If other is not a Vec2 or 2-element sequence.
         """
     def __bool__(self) -> bool:
         """
@@ -3012,7 +2110,7 @@ class Vec2:
         Returns:
             bool: True if not component-wise less than other.
         """
-    def __getitem__(self, index: int) -> float:
+    def __getitem__(self, index: typing.SupportsInt) -> float:
         """
         Access vector components by index.
         
@@ -3042,20 +2140,17 @@ class Vec2:
         Returns:
             int: Hash value based on x and y components.
         """
-    def __iadd__(self, other: typing.Any) -> Vec2:
+    def __iadd__(self, other: Vec2) -> Vec2:
         """
         In-place addition (self += other).
         
         Args:
-            other (Vec2 or sequence): The Vec2 or sequence [x, y] to add.
+            other (Vec2): The Vec2 to add.
         
         Returns:
             Vec2: Reference to self after modification.
-        
-        Raises:
-            TypeError: If other is not a Vec2 or 2-element sequence.
         """
-    def __imul__(self, scalar: float) -> Vec2:
+    def __imul__(self, scalar: typing.SupportsFloat) -> Vec2:
         """
         In-place multiplication by a scalar value (self *= scalar).
         
@@ -3071,7 +2166,7 @@ class Vec2:
         Create a zero vector (0, 0).
         """
     @typing.overload
-    def __init__(self, value: float) -> None:
+    def __init__(self, value: typing.SupportsFloat) -> None:
         """
         Create a Vec2 with both x and y set to the same value.
         
@@ -3079,7 +2174,7 @@ class Vec2:
             value (float): Value to set for both x and y components.
         """
     @typing.overload
-    def __init__(self, x: float, y: float) -> None:
+    def __init__(self, x: typing.SupportsFloat, y: typing.SupportsFloat) -> None:
         """
         Create a Vec2 with given x and y values.
         
@@ -3088,7 +2183,7 @@ class Vec2:
             y (float): The y component.
         """
     @typing.overload
-    def __init__(self, arg0: typing.Sequence) -> None:
+    def __init__(self, arg0: collections.abc.Sequence) -> None:
         """
         Create a Vec2 from a sequence of two elements.
         
@@ -3098,27 +2193,24 @@ class Vec2:
         Raises:
             RuntimeError: If sequence doesn't contain exactly 2 elements.
         """
-    def __isub__(self, other: typing.Any) -> Vec2:
+    def __isub__(self, other: Vec2) -> Vec2:
         """
         In-place subtraction (self -= other).
         
         Args:
-            other (Vec2 or sequence): The Vec2 or sequence [x, y] to subtract.
+            other (Vec2): The Vec2 to subtract.
         
         Returns:
             Vec2: Reference to self after modification.
-        
-        Raises:
-            TypeError: If other is not a Vec2 or 2-element sequence.
         """
-    def __iter__(self) -> typing.Iterator:
+    def __iter__(self) -> collections.abc.Iterator:
         """
         Return an iterator over (x, y).
         
         Returns:
             iterator: Iterator that yields x first, then y.
         """
-    def __itruediv__(self, scalar: float) -> Vec2:
+    def __itruediv__(self, scalar: typing.SupportsFloat) -> Vec2:
         """
         In-place division by a scalar value (self /= scalar).
         
@@ -3155,7 +2247,7 @@ class Vec2:
         Returns:
             bool: True if both x and y are less than other's x and y.
         """
-    def __mul__(self, scalar: float) -> Vec2:
+    def __mul__(self, scalar: typing.SupportsFloat) -> Vec2:
         """
         Multiply the vector by a scalar value.
         
@@ -3182,18 +2274,15 @@ class Vec2:
         Returns:
             Vec2: A new Vec2 with negated x and y components.
         """
-    def __radd__(self, other: typing.Any) -> Vec2:
+    def __radd__(self, other: Vec2) -> Vec2:
         """
         Right-hand addition (other + self).
         
         Args:
-            other (Vec2 or sequence): The Vec2 or sequence [x, y] to add.
+            other (Vec2): The Vec2 to add.
         
         Returns:
             Vec2: A new Vec2 with the result of the addition.
-        
-        Raises:
-            TypeError: If other is not a Vec2 or 2-element sequence.
         """
     def __repr__(self) -> str:
         """
@@ -3202,7 +2291,7 @@ class Vec2:
         Returns:
             str: String in format "Vec2(x, y)".
         """
-    def __rmul__(self: float, scalar: Vec2) -> Vec2:
+    def __rmul__(self: typing.SupportsFloat, scalar: Vec2) -> Vec2:
         """
         Right-hand multiplication (scalar * self).
         
@@ -3212,20 +2301,17 @@ class Vec2:
         Returns:
             Vec2: A new Vec2 with multiplied components.
         """
-    def __rsub__(self, other: typing.Any) -> Vec2:
+    def __rsub__(self, other: Vec2) -> Vec2:
         """
         Right-hand subtraction (other - self).
         
         Args:
-            other (Vec2 or sequence): The Vec2 or sequence [x, y] to subtract from.
+            other (Vec2): The Vec2 to subtract from.
         
         Returns:
             Vec2: A new Vec2 with the result of the subtraction.
-        
-        Raises:
-            TypeError: If other is not a Vec2 or 2-element sequence.
         """
-    def __setitem__(self, index: int, value: float) -> None:
+    def __setitem__(self, index: typing.SupportsInt, value: typing.SupportsFloat) -> None:
         """
         Set vector components by index.
         
@@ -3243,20 +2329,17 @@ class Vec2:
         Returns:
             str: String in format "<x, y>".
         """
-    def __sub__(self, other: typing.Any) -> Vec2:
+    def __sub__(self, other: Vec2) -> Vec2:
         """
-        Subtract another Vec2 or sequence from this Vec2.
+        Subtract another Vec2 from this Vec2.
         
         Args:
-            other (Vec2 or sequence): The Vec2 or sequence [x, y] to subtract.
+            other (Vec2): The Vec2 to subtract.
         
         Returns:
             Vec2: A new Vec2 with the result of the subtraction.
-        
-        Raises:
-            TypeError: If other is not a Vec2 or 2-element sequence.
         """
-    def __truediv__(self, scalar: float) -> Vec2:
+    def __truediv__(self, scalar: typing.SupportsFloat) -> Vec2:
         """
         Divide the vector by a scalar value.
         
@@ -3282,14 +2365,14 @@ class Vec2:
         
         If the vector is zero, it remains unchanged.
         """
-    def rotate(self, radians: float) -> None:
+    def rotate(self, radians: typing.SupportsFloat) -> None:
         """
         Rotate the vector by the given angle in radians.
         
         Args:
             radians (float): The angle to rotate by in radians.
         """
-    def scale_to_length(self, length: float) -> None:
+    def scale_to_length(self, length: typing.SupportsFloat) -> None:
         """
         Scale the vector to the specified length in-place.
         
@@ -3325,7 +2408,7 @@ class Vec2:
         The x component of the vector.
         """
     @x.setter
-    def x(self, arg0: float) -> None:
+    def x(self, arg0: typing.SupportsFloat) -> None:
         ...
     @property
     def y(self) -> float:
@@ -3333,7 +2416,7 @@ class Vec2:
         The y component of the vector.
         """
     @y.setter
-    def y(self, arg0: float) -> None:
+    def y(self, arg0: typing.SupportsFloat) -> None:
         ...
 def init() -> None:
     """
@@ -3358,14 +2441,14 @@ CAMERA_DENIED: EventType  # value = <EventType.CAMERA_DENIED: 5123>
 CAMERA_REMOVED: EventType  # value = <EventType.CAMERA_REMOVED: 5121>
 CENTER: Anchor  # value = <Anchor.CENTER: 4>
 C_BACK: GamepadButton  # value = <GamepadButton.C_BACK: 4>
-C_DPADDOWN: GamepadButton  # value = <GamepadButton.C_DPADDOWN: 12>
-C_DPADLEFT: GamepadButton  # value = <GamepadButton.C_DPADLEFT: 13>
-C_DPADRIGHT: GamepadButton  # value = <GamepadButton.C_DPADRIGHT: 14>
-C_DPADUP: GamepadButton  # value = <GamepadButton.C_DPADUP: 11>
+C_DPAD_DOWN: GamepadButton  # value = <GamepadButton.C_DPAD_DOWN: 12>
+C_DPAD_LEFT: GamepadButton  # value = <GamepadButton.C_DPAD_LEFT: 13>
+C_DPAD_RIGHT: GamepadButton  # value = <GamepadButton.C_DPAD_RIGHT: 14>
+C_DPAD_UP: GamepadButton  # value = <GamepadButton.C_DPAD_UP: 11>
 C_EAST: GamepadButton  # value = <GamepadButton.C_EAST: 1>
 C_GUIDE: GamepadButton  # value = <GamepadButton.C_GUIDE: 5>
-C_LEFTSHOULDER: GamepadButton  # value = <GamepadButton.C_LEFTSHOULDER: 9>
-C_LEFTSTICK: GamepadButton  # value = <GamepadButton.C_LEFTSTICK: 7>
+C_LSHOULDER: GamepadButton  # value = <GamepadButton.C_LSHOULDER: 9>
+C_LSTICK: GamepadButton  # value = <GamepadButton.C_LSTICK: 7>
 C_LTRIGGER: GamepadAxis  # value = <GamepadAxis.C_LTRIGGER: 4>
 C_LX: GamepadAxis  # value = <GamepadAxis.C_LX: 0>
 C_LY: GamepadAxis  # value = <GamepadAxis.C_LY: 1>
@@ -3373,21 +2456,21 @@ C_NORTH: GamepadButton  # value = <GamepadButton.C_NORTH: 3>
 C_PS3: GamepadType  # value = <GamepadType.C_PS3: 4>
 C_PS4: GamepadType  # value = <GamepadType.C_PS4: 5>
 C_PS5: GamepadType  # value = <GamepadType.C_PS5: 6>
-C_RIGHTSHOULDER: GamepadButton  # value = <GamepadButton.C_RIGHTSHOULDER: 10>
-C_RIGHTSTICK: GamepadButton  # value = <GamepadButton.C_RIGHTSTICK: 8>
+C_RSHOULDER: GamepadButton  # value = <GamepadButton.C_RSHOULDER: 10>
+C_RSTICK: GamepadButton  # value = <GamepadButton.C_RSTICK: 8>
 C_RTRIGGER: GamepadAxis  # value = <GamepadAxis.C_RTRIGGER: 5>
 C_RX: GamepadAxis  # value = <GamepadAxis.C_RX: 2>
 C_RY: GamepadAxis  # value = <GamepadAxis.C_RY: 3>
 C_SOUTH: GamepadButton  # value = <GamepadButton.C_SOUTH: 0>
 C_STANDARD: GamepadType  # value = <GamepadType.C_STANDARD: 1>
 C_START: GamepadButton  # value = <GamepadButton.C_START: 6>
-C_SWITCHJOYCONLEFT: GamepadType  # value = <GamepadType.C_SWITCHJOYCONLEFT: 8>
-C_SWITCHJOYCONPAIR: GamepadType  # value = <GamepadType.C_SWITCHJOYCONPAIR: 10>
-C_SWITCHJOYCONRIGHT: GamepadType  # value = <GamepadType.C_SWITCHJOYCONRIGHT: 9>
-C_SWITCHPRO: GamepadType  # value = <GamepadType.C_SWITCHPRO: 7>
+C_SWITCH_JOYCON_LEFT: GamepadType  # value = <GamepadType.C_SWITCH_JOYCON_LEFT: 8>
+C_SWITCH_JOYCON_PAIR: GamepadType  # value = <GamepadType.C_SWITCH_JOYCON_PAIR: 10>
+C_SWITCH_JOYCON_RIGHT: GamepadType  # value = <GamepadType.C_SWITCH_JOYCON_RIGHT: 9>
+C_SWITCH_PRO: GamepadType  # value = <GamepadType.C_SWITCH_PRO: 7>
 C_WEST: GamepadButton  # value = <GamepadButton.C_WEST: 2>
-C_XBOX360: GamepadType  # value = <GamepadType.C_XBOX360: 2>
-C_XBOXONE: GamepadType  # value = <GamepadType.C_XBOXONE: 3>
+C_XBOX_360: GamepadType  # value = <GamepadType.C_XBOX_360: 2>
+C_XBOX_ONE: GamepadType  # value = <GamepadType.C_XBOX_ONE: 3>
 DROP_BEGIN: EventType  # value = <EventType.DROP_BEGIN: 4098>
 DROP_COMPLETE: EventType  # value = <EventType.DROP_COMPLETE: 4099>
 DROP_FILE: EventType  # value = <EventType.DROP_FILE: 4096>
